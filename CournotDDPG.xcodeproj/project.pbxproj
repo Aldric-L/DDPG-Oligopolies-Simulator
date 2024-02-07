@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FE3833DA2B6FAA3E008ECFD8 /* LearningAgent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FE3833D82B6FAA3E008ECFD8 /* LearningAgent.cpp */; };
 		FE5636A42B63D2AF000D3B5B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FE5636A32B63D2AF000D3B5B /* main.cpp */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +24,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		FE3833D82B6FAA3E008ECFD8 /* LearningAgent.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LearningAgent.cpp; sourceTree = "<group>"; };
+		FE3833D92B6FAA3E008ECFD8 /* LearningAgent.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = LearningAgent.hpp; sourceTree = "<group>"; };
+		FE3833DB2B739455008ECFD8 /* v0.2 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = v0.2; sourceTree = "<group>"; };
+		FE3833DC2B739487008ECFD8 /* AKML-lib */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "AKML-lib"; sourceTree = "<group>"; };
 		FE5636A02B63D2AF000D3B5B /* CournotDDPG */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CournotDDPG; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE5636A32B63D2AF000D3B5B /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -57,7 +62,11 @@
 		FE5636A22B63D2AF000D3B5B /* CournotDDPG */ = {
 			isa = PBXGroup;
 			children = (
+				FE3833DC2B739487008ECFD8 /* AKML-lib */,
+				FE3833DB2B739455008ECFD8 /* v0.2 */,
 				FE5636A32B63D2AF000D3B5B /* main.cpp */,
+				FE3833D82B6FAA3E008ECFD8 /* LearningAgent.cpp */,
+				FE3833D92B6FAA3E008ECFD8 /* LearningAgent.hpp */,
 			);
 			path = CournotDDPG;
 			sourceTree = "<group>";
@@ -120,6 +129,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FE5636A42B63D2AF000D3B5B /* main.cpp in Sources */,
+				FE3833DA2B6FAA3E008ECFD8 /* LearningAgent.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
