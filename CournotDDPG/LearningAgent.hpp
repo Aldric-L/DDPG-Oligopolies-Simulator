@@ -19,14 +19,14 @@ class LearningAgent {
 public:
     struct replay {float prevState; float agentAction; float reward; float nextState; bool isTerminated;
         replay(float prevState, float agentAction, float reward, float nextState, bool isTerminated) : prevState(prevState), agentAction(agentAction), reward(reward), nextState(nextState), isTerminated(isTerminated) {}; };
-    static inline unsigned short int preLearningExpriences = 15;
+    static inline unsigned short int preLearningExpriences = 50;
     static inline std::size_t maxBufferSize = 1000;
-    static inline std::size_t maxEpochsAtLearningTime = 15;
-    static inline std::size_t batchSize = 10;
-    static inline float learningRate = 0.01;
+    static inline std::size_t maxEpochsAtLearningTime = 50;
+    static inline std::size_t batchSize = 15;
+    static inline float learningRate = 0.1;
     static inline float gradientTolerance = 1e-05;
     static inline float gamma = 0.1;
-    static inline float polyakCoef = 0.2;
+    static inline float polyakCoef = 0.8;
     
     
 protected:
@@ -45,7 +45,12 @@ public:
         target_QNet = QNet; target_policyNet = policyNet;
     }
     
-    inline float play(float state) { return policyNet.process(akml::make_dynamic_vector<float>(state)).read(1, 1); }
+    inline float play(float state, bool white_noise=true) {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        // first firm plays randomly (it decide a quantity between 1 and 100
+        std::normal_distribution<float> distribution(0,0.1);
+        return std::max((float) std::min((float) policyNet.process(akml::make_dynamic_vector<float>(state)).read(1, 1) + (white_noise ? (float)distribution(gen) : 0), 1.f), 0.f); }
     
     inline void feedBack(float prevState, float agentAction, float reward, float nextState, bool isTerminated) {
         if (replayBuffer.size() > maxBufferSize){

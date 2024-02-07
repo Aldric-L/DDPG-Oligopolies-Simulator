@@ -31,6 +31,10 @@ int main(int argc, const char * argv[]) {
         return (float)(q/5.f);
     };
     
+    auto bestResponse = [](float q) {
+        return (float)(1.f-q-(1.f/5.f));
+    };
+    
     std::random_device rd;
     std::mt19937 gen(rd());
     // first firm plays randomly (it decide a quantity between 1 and 100
@@ -48,13 +52,13 @@ int main(int argc, const char * argv[]) {
         
         std::cout << "\nTurnament " << it;
         std::cout << "\nOur learning agent is asked to respond to " << (float)random_firm_action;
-        std::cout << "\nHe plays " << our_firm_action;
+        std::cout << "\nHe plays " << our_firm_action << " (best response=" << bestResponse(random_firm_action) << ")";
         std::cout << "\nMarket price set to " << price << " TrueProfit=" << true_profit << " Profit=" << profit << " Cumulative profit=" << cumulative_profit;
         
         cumulative_profit += profit;
         float oldaction = random_firm_action;
         random_firm_action=(float)distribution(gen);
-        learningAgent.feedBack(oldaction, our_firm_action, profit, random_firm_action, (cumulative_profit <= 0) );
+        learningAgent.feedBack(oldaction, our_firm_action, profit, random_firm_action, /*(cumulative_profit <= 0)*/true );
         if ((cumulative_profit <= 0))
             cumulative_profit = 1;
         std::cout << "\n";
