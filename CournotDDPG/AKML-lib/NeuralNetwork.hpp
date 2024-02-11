@@ -150,14 +150,14 @@ public:
                     akml::DynamicMatrix<float> errorGrad = errorFunc->local_derivative(r, outputs_set.at(input_id));
                     temp_outputs.emplace_back(std::move(r));
                     temp_outputs_expected.emplace_back(outputs_set.at(input_id));
-                    batch_grads.emplace_back(std::move(this->computeErrorGradient(errorGrad)));
+                    batch_grads.emplace_back(this->computeErrorGradient(errorGrad));
                 }
                 std::cout << "\nEPOCH " << epochs << " / " << max_epochs << ": MSE=" << errorFunc->sumfunction(temp_outputs, temp_outputs_expected) << " LR=" << learning_rate;
                 temp_outputs.clear();
                 temp_outputs_expected.clear();
                 akml::DynamicMatrix<float> final_grad = akml::mean(batch_grads);
                 final_grad = method * learning_rate * final_grad;
-                if (learning_rate < tolerance || akml::arg_max(final_grad, true) < tolerance){
+                if (learning_rate < tolerance){
                     std::cout << "\n Inactivity detected. End training.";
                     break;
                 }
@@ -191,7 +191,7 @@ public:
     inline akml::DynamicMatrix<float> computeGradient(){
         akml::DynamicMatrix<float> gradient (akml::make_identity<akml::DynamicMatrix<float>>(layers.back()->getNeuronNumber()));
     
-        for (std::size_t lay(1); lay < layers.size()-1; lay++){
+        for (std::size_t lay(1); lay < layers.size(); lay++){
             if (layers.at(layers.size()-lay)->getPreActivationLayer() == nullptr)
                 throw std::invalid_argument("The neuralNetwork need to have been asked with an input, before asking to compute gradient of the input.");
             

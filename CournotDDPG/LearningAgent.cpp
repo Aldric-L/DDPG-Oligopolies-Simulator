@@ -8,80 +8,91 @@
 #include "LearningAgent.hpp"
 
 void LearningAgent::train() {
-    std::vector<akml::DynamicMatrix<float>> inputs;
-    std::vector<akml::DynamicMatrix<float>> inputs_actor;
-    std::vector<akml::DynamicMatrix<float>> inputs_states;
-    std::vector<akml::DynamicMatrix<float>> outputs_expected;
-    inputs.reserve(replayBuffer.size()); outputs_expected.reserve(replayBuffer.size()); inputs_actor.reserve(replayBuffer.size()); inputs_states.reserve(replayBuffer.size());
-    for (std::size_t replay_i(0); replay_i < replayBuffer.size(); replay_i++){
-        inputs.emplace_back(akml::make_dynamic_vector<float>( replayBuffer.at(replay_i).prevState, replayBuffer.at(replay_i).agentAction ));
-        inputs_actor.emplace_back(akml::make_dynamic_vector<float>( replayBuffer.at(replay_i).prevState, policyNet.process(akml::make_dynamic_vector<float>( replayBuffer.at(replay_i).prevState)).read(1,1) ));
-        inputs_states.emplace_back(akml::make_dynamic_vector<float>( replayBuffer.at(replay_i).prevState ));
-        outputs_expected.emplace_back(akml::make_dynamic_vector<float>(
-            replayBuffer.at(replay_i).reward +
-            gamma * (1 - replayBuffer.at(replay_i).isTerminated ) * target_QNet.process(
-                akml::make_dynamic_vector<float>(
-                    replayBuffer.at(replay_i).nextState,
-                    target_policyNet.process(akml::make_dynamic_vector<float>(replayBuffer.at(replay_i).nextState)).read(1,1))).read(1,1)
-        ));
-    }
+    
+    struct innerBatchInputs {
+        akml::DynamicMatrix<float>* input;
+        akml::DynamicMatrix<float>* input_actor;
+        akml::DynamicMatrix<float>* input_critic;
+        akml::DynamicMatrix<float>* output_expected;
+    };
     
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<std::size_t> distribution(0,inputs.size()-1);
-    std::vector<std::size_t> batch_elems; batch_elems.reserve(batchSize);
+    std::uniform_int_distribution<std::size_t> distribution(0,replayBuffer.size()-1);
+    
+    std::vector<std::size_t> batch_elems_id;
+    std::vector<innerBatchInputs> batch_elems;
+    std::size_t batchsNb = std::min(replayBuffer.size()/batchSize, batchNumber);
+    batch_elems.reserve(batchsNb*batchSize);
+    batch_elems_id.reserve(batchsNb*batchSize);
     
     // These vectors are about the QNet network (the critic network)
     std::vector<akml::DynamicMatrix<float>> temp_outputs; temp_outputs.reserve(batchSize);
     std::vector<akml::DynamicMatrix<float>> temp_outputs_expected; temp_outputs_expected.reserve(batchSize);
-    std::vector<akml::DynamicMatrix<float>> batch_grads; batch_grads.reserve(batchSize);
+    std::vector<akml::DynamicMatrix<float>> batch_critic_grads; batch_critic_grads.reserve(batchSize);
     
     // This vector is about the Actor network optimization phase
-    std::vector<akml::DynamicMatrix<float>> batch_critic_grads; batch_critic_grads.reserve(batchSize);
+    std::vector<akml::DynamicMatrix<float>> batch_actor_grads; batch_actor_grads.reserve(batchSize);
+    auto noErrorGradInput = akml::make_dynamic_vector<float>(1.f);
     for (std::size_t epoch(0); epoch < maxEpochsAtLearningTime; epoch++){
-        for (std::size_t batch_i(0); batch_i < std::min(inputs.size() - batchSize, batchSize); batch_i++){
-            batch_elems.clear();
-            for (std::size_t i(0); i < batchSize; i++){
-                std::size_t target(0);
-                do {
-                    target = distribution(gen);
-                } while (std::find(batch_elems.begin(), batch_elems.end(), target) != batch_elems.end());
-                batch_elems.push_back(target);
-            }
-            temp_outputs.clear(); temp_outputs_expected.clear(); batch_grads.clear(); batch_critic_grads.clear();
+        // At each epoch, we create a sample of minibatches
+        batch_elems.clear(); batch_elems_id.clear();
+        for (std::size_t i(0); i < batchsNb*batchSize; i++){
+            std::size_t target(0);
+            do {
+                target = distribution(gen);
+            } while (std::find(batch_elems_id.begin(), batch_elems_id.end(), target) != batch_elems_id.end());
+            batch_elems_id.push_back(target);
+            batch_elems.push_back({
+                .input = &rBufferInputs.at(target),
+                .input_actor = &rBufferInputsStates.at(target),
+                .input_critic = new akml::DynamicMatrix<float> (akml::make_dynamic_vector<float>( replayBuffer.at(target).prevState, policyNet.process(akml::make_dynamic_vector<float>( replayBuffer.at(target).prevState)).read(1,1))),
+                .output_expected = new akml::DynamicMatrix<float> (akml::make_dynamic_vector<float>(
+                            replayBuffer.at(target).reward +
+                            gamma * (1 - replayBuffer.at(target).isTerminated ) * target_QNet.process(
+                                akml::make_dynamic_vector<float>(replayBuffer.at(target).nextState,
+                                target_policyNet.process(akml::make_dynamic_vector<float>(replayBuffer.at(target).nextState)).read(1,1))).read(1,1)))
+            });
+        }
+        
+        // For each batch
+        for (std::size_t batch_i(0); batch_i < batchsNb; batch_i++){
+            temp_outputs.clear(); temp_outputs_expected.clear(); batch_actor_grads.clear(); batch_critic_grads.clear();
             
             for (std::size_t input_id(0); input_id < batchSize; input_id++){
+                std::size_t preid = batch_i * batchSize;
                 // Critic updating
-                akml::DynamicMatrix<float> local_output = QNet.process(inputs.at(batch_elems.at(input_id)));
-                akml::DynamicMatrix<float> errorGrad = akml::ErrorFunctions::MSE.local_derivative(local_output, outputs_expected.at(batch_elems.at(input_id)));
+                akml::DynamicMatrix<float> local_output = QNet.process(*batch_elems.at(input_id + preid).input);
+                akml::DynamicMatrix<float> errorGrad = akml::ErrorFunctions::MSE.local_derivative(local_output, *batch_elems.at(input_id + preid).output_expected);
                 temp_outputs.emplace_back(std::move(local_output));
-                temp_outputs_expected.emplace_back(outputs_expected.at(batch_elems.at(input_id)));
-                batch_grads.emplace_back(QNet.computeErrorGradient(errorGrad));
+                temp_outputs_expected.emplace_back(*batch_elems.at(input_id + preid).output_expected);
+                batch_critic_grads.emplace_back(QNet.computeErrorGradient(errorGrad));
                 
                 // Actor updating
-                QNet.process(inputs_actor.at(batch_elems.at(input_id)));
-                batch_critic_grads.emplace_back(QNet.computeGradient().read(1,1) * inputs_states.at(batch_elems.at(input_id)));
+                QNet.process(*batch_elems.at(input_id + preid).input_critic);
+                policyNet.process(*batch_elems.at(input_id + preid).input_actor);
+                //std::cout << QNet.computeGradient();
+                batch_actor_grads.emplace_back(QNet.computeGradient().read(2,1) *
+                                               policyNet.computeErrorGradient(noErrorGradInput));
             }
             
-            // We got then 2 vectors of gradients, one for the actor (batch_critic_grads), one for the critic (batch_grads)
-            std::cout << "\nEPOCH " << learningEpochsCompleted << " Batch " << batch_i << ": MSE=" << akml::ErrorFunctions::MSE.sumfunction(temp_outputs, temp_outputs_expected) << " LR=" << learningRate;
+            std::cout << "\nEPOCH " << learningEpochsCompleted << " Batch " << batch_i+1 << " / " << batchsNb << " : MSE=" << akml::ErrorFunctions::MSE.sumfunction(temp_outputs, temp_outputs_expected) << " LR=" << learningRateCritic;
             
-            akml::DynamicMatrix<float> final_actor_grad = akml::mean(batch_grads);
+            akml::DynamicMatrix<float> final_actor_grad = akml::mean(batch_actor_grads);
             akml::DynamicMatrix<float> final_critic_grad = akml::mean(batch_critic_grads);
-            final_actor_grad = akml::NeuralNetwork::GRADIENT_METHODS::GRADIENT_DESCENT * learningRate * final_actor_grad;
-            final_critic_grad = akml::NeuralNetwork::GRADIENT_METHODS::GRADIENT_ASCENT * learningRate * final_critic_grad;
-            if (learningRate < gradientTolerance){
+            final_actor_grad = akml::NeuralNetwork::GRADIENT_METHODS::GRADIENT_ASCENT * learningRateActor * final_actor_grad;
+            final_critic_grad = akml::NeuralNetwork::GRADIENT_METHODS::GRADIENT_DESCENT * learningRateCritic * final_critic_grad;
+            if (std::min(learningRateActor, learningRateCritic) < gradientTolerance){
                 std::cout << "\n Insufficient learning rate. End training."; break;
             }
-            if (akml::arg_min(final_actor_grad, true) > gradientTolerance){
-                QNet.mooveCoefficients(std::move(final_actor_grad), gradientTolerance);
-            }
-            if (akml::arg_min(final_critic_grad, true) > gradientTolerance){
-                policyNet.mooveCoefficients(std::move(final_critic_grad), gradientTolerance);
-            }
-            
+            policyNet.mooveCoefficients(std::move(final_actor_grad), gradientTolerance);
+            QNet.mooveCoefficients(std::move(final_critic_grad), gradientTolerance);
         }
         learningEpochsCompleted++;
+        for (std::size_t i(0); i < batch_elems.size(); i++){
+            delete batch_elems.at(i).input_critic;
+            delete batch_elems.at(i).output_expected;
+        }
     }
     target_policyNet.polyakMerge(policyNet, polyakCoef);
     target_QNet.polyakMerge(QNet, polyakCoef);

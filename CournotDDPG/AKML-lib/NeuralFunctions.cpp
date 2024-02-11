@@ -23,6 +23,11 @@ namespace akml {
             .function = [](const float x) {return x;},
             .derivative = [](const float x) { return 1; }
         };
+    
+        const struct ActivationFunction<float> TANH = {
+            .function = [](const float x) {return (1.f-std::exp(-2.f*x))/(1.f+std::exp(-2.f*x));},
+            .derivative = [](const float x) { return 1.f-std::pow((1.f-std::exp(-2.f*x))/(1.f+std::exp(-2.f*x)), 2); }
+        };
     }
 
     namespace ErrorFunctions {

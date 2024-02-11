@@ -27,6 +27,15 @@ namespace akml {
         std::string buffer = "";
         
     public:
+        inline CSV_Saver(std::size_t bufferMaxSize=0){
+            if (bufferMaxSize != 0)
+                memory.reserve(bufferMaxSize);
+        }
+        
+        inline void reserve(std::size_t bufferMaxSize){
+            memory.reserve(bufferMaxSize);
+        }
+        
         inline void addSave(SaveClass* iteration) {
             memory.push_back(std::make_pair((memory.size() == 0) ? 1 : memory.back().first+1, iteration));
         }
@@ -34,6 +43,12 @@ namespace akml {
         inline void addSave(const SaveClass iteration) {
             SaveClass* itpoint = new SaveClass();
             *itpoint = std::move(iteration);
+            memory.push_back(std::make_pair((memory.size() == 0) ? 1 : memory.back().first+1, itpoint));
+        }
+        
+        template<typename... types>
+        inline void addSave(const types... parameters) {
+            SaveClass* itpoint = new SaveClass(parameters...);
             memory.push_back(std::make_pair((memory.size() == 0) ? 1 : memory.back().first+1, itpoint));
         }
         
@@ -49,6 +64,7 @@ namespace akml {
                     if (iteration)
                         buffer += std::to_string(it) + ",";
                     buffer += memory[it].second->printAsCSV() + "\n";
+                    delete memory[it].second;
                 }
                 memory.clear();
             }
