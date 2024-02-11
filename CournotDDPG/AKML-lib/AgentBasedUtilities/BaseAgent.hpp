@@ -10,23 +10,23 @@
 
 #include <stdio.h>
 
-#include "../AKML.hpp"
+#include "../NeuralNetwork.hpp"
 
 namespace akml {
 
     class BaseAgent {
     protected:
-        akml::NeuralNetwork<>** brainNN;
+        akml::NeuralNetwork** brainNN;
         
     public:
         const unsigned int akml_agent_id;
 
-        BaseAgent(unsigned int id, akml::NeuralNetwork<>* NN) : akml_agent_id(id) {
-            brainNN = new akml::NeuralNetwork<>* (NN);
+        BaseAgent(unsigned int id, akml::NeuralNetwork* NN) : akml_agent_id(id) {
+            brainNN = new akml::NeuralNetwork* (NN);
         };
         
-        void editNNPointer(akml::NeuralNetwork<>* NN);
-        akml::NeuralNetwork<>* getNNAccess();
+        void editNNPointer(akml::NeuralNetwork* NN);
+        akml::NeuralNetwork* getNNAccess();
     
     };
 }

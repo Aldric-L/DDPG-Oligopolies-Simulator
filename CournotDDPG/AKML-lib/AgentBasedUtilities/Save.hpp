@@ -8,8 +8,9 @@
 #ifndef AKML_Save_hpp
 #define AKML_Save_hpp
 
-#include "../AKML.hpp"
 #include <tuple>
+#include "../StaticLoops.hpp"
+#include "../Matrices.hpp"
 
 namespace akml {
     class AbstractSave {};

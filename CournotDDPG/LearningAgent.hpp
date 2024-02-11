@@ -25,7 +25,7 @@ public:
     //static inline std::size_t batchSize = 15;
     static inline std::size_t batchSize = 64;
     static inline std::size_t batchNumber = 32;
-    static inline float learningRateActor = 0.04;
+    static inline float learningRateActor = 0.015;
     static inline float learningRateCritic = 0.1;
     static inline float gradientTolerance = 1e-08;
     static inline float gamma = 0.1;
@@ -33,6 +33,7 @@ public:
     
     
 protected:
+    std::string name;
     unsigned short int accumulatedExperiences;
     akml::NeuralNetwork QNet, target_QNet, policyNet, target_policyNet;
     std::deque <LearningAgent::replay> replayBuffer;
@@ -47,7 +48,7 @@ protected:
     void train();
     
 public:
-    LearningAgent() : QNet(4), policyNet(4), accumulatedExperiences(0), target_QNet(4), target_policyNet(4) {
+    LearningAgent(std::string name="") : QNet(4), policyNet(4), accumulatedExperiences(0), target_QNet(4), target_policyNet(4), name(std::move(name)) {
         QNet.construct(QNetInitList); policyNet.construct(PolicyNetInitList);
         target_QNet = QNet; target_policyNet = policyNet;
     }

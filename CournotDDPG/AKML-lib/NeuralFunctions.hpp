@@ -8,7 +8,6 @@
 #ifndef NeuralFunctions_hpp
 #define NeuralFunctions_hpp
 
-#include "AKML_consts.hpp"
 #include "Matrices.hpp"
 #include <stdio.h>
 #include <cmath>

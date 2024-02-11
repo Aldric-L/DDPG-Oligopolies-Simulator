@@ -76,7 +76,10 @@ void LearningAgent::train() {
                                                policyNet.computeErrorGradient(noErrorGradInput));
             }
             
-            std::cout << "\nEPOCH " << learningEpochsCompleted << " Batch " << batch_i+1 << " / " << batchsNb << " : MSE=" << akml::ErrorFunctions::MSE.sumfunction(temp_outputs, temp_outputs_expected) << " LR=" << learningRateCritic;
+            std::cout << "\nEPOCH ";
+            if (name != "")
+                std::cout << "(" << name << ") ";
+            std::cout << learningEpochsCompleted << " Batch " << batch_i+1 << " / " << batchsNb << " : MSE=" << akml::ErrorFunctions::MSE.sumfunction(temp_outputs, temp_outputs_expected) << " LR=" << learningRateCritic;
             
             akml::DynamicMatrix<float> final_actor_grad = akml::mean(batch_actor_grads);
             akml::DynamicMatrix<float> final_critic_grad = akml::mean(batch_critic_grads);

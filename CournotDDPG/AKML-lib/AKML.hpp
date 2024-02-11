@@ -23,11 +23,10 @@
 
 //#endif /* AKML_hpp */
 
-#include "AKML_consts.hpp"
-#include "UtilityLoops.hpp"
+#include "StaticLoops.hpp"
 #include "Matrices.hpp"
 #include "NeuralLayer.hpp"
-#include "NeuralNetwork.hpp"
+#include "NeuralNetwork.cpp"
 /*
     #ifndef AKML_NN_INSTANCED
     #define AKML_NN_INSTANCED

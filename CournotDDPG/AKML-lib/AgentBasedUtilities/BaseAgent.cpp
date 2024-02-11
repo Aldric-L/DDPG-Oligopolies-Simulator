@@ -9,10 +9,10 @@
 
 namespace akml {
 
-    void BaseAgent::editNNPointer(akml::NeuralNetwork<>* NN) {
-        brainNN = new akml::NeuralNetwork<>* (NN);
+    void BaseAgent::editNNPointer(akml::NeuralNetwork* NN) {
+        brainNN = new akml::NeuralNetwork* (NN);
     }
 
-    akml::NeuralNetwork<>* BaseAgent::getNNAccess() { return *brainNN; }
+    akml::NeuralNetwork* BaseAgent::getNNAccess() { return *brainNN; }
 
 }

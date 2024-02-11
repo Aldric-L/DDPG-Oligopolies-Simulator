@@ -16,7 +16,6 @@ namespace akml {
 class NeuralLayer {
 protected:
     DynamicMatrix<float> ownActivationLayer;
-    //DynamicMatrix<float> previousActivationLayer;
     DynamicMatrix<float> weights;
     DynamicMatrix<float> biases;
     DynamicMatrix<float> errorLayer;
@@ -37,7 +36,6 @@ public:
         previousNeuronNumber((prevLayer != nullptr) ? prevLayer->getNeuronNumber() : 1),
         weights(neuronNumber, (prevLayer != nullptr) ? prevLayer->getNeuronNumber() : 1),
         activationFunction(nullptr),
-        //previousActivationLayer((prevLayer != nullptr) ? prevLayer->getNeuronNumber() : 1, 1),
         ownPreActivationLayer(nullptr),
         nextLayer(nullptr),
         errorLayer(neuronNumber, 1){
@@ -65,7 +63,6 @@ public:
     
     inline void setBiases(const DynamicMatrix<float>& new_biases) { biases = new_biases; }
     inline void setWeights(const DynamicMatrix<float>& new_weights) { weights = new_weights; }
-    //inline void setPreviousActivationLayer(const DynamicMatrix<float>& prev) { previousActivationLayer = prev; }
     inline void setNextLayer(NeuralLayer* next) { nextLayer = next; }
 
     inline DynamicMatrix<float>& getBiasesAccess(){ return biases; }
@@ -73,7 +70,6 @@ public:
     inline DynamicMatrix<float>& getWeightsAccess(){ return weights; }
     inline DynamicMatrix<float> getWeights(){ return weights; }
     inline const DynamicMatrix<float>* getPreActivationLayer(){ return ownPreActivationLayer; }
-    //inline DynamicMatrix<float> getCachedPreviousActivationLayer (){ return previousActivationLayer; }
     
     inline DynamicMatrix<float> getActivationLayer(){
         if (previousLayer != nullptr){
@@ -100,8 +96,6 @@ public:
             // Last layer
             errorLayer = akml::hadamard_product(errorGrad, akml::transform((ownPreActivationLayer != nullptr) ? *ownPreActivationLayer : akml::matrix_product(weights, previousLayer->getActivationLayer()) + biases, activationFunction->derivative));
         }
-        //std::cout << "\n Layer " << layerId << " \n";
-        //std::cout << errorLayer;
         return errorLayer;
     }
 };
