@@ -25,11 +25,13 @@ public:
     //static inline std::size_t batchSize = 15;
     static inline std::size_t batchSize = 64;
     static inline std::size_t batchNumber = 32;
-    static inline float learningRateActor = 0.015;
+    //static inline float learningRateActor = 0.015;
+    static inline float learningRateActor = 0.001;
     static inline float learningRateCritic = 0.1;
     static inline float gradientTolerance = 1e-08;
     static inline float gamma = 0.1;
     static inline float polyakCoef = 0.95;
+    static inline float decayRate = 0.9998;
     
     
 protected:

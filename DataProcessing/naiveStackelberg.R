@@ -1,4 +1,6 @@
-data <- read.csv("DDPG-NaiveStackelberg-Output-1977062708.csv")
+#data <- read.csv("DDPG-NaiveStackelberg-Output-1977062708.csv")
+data <- read.csv("DDPG-NaiveStackelberg-Output-1552360841.csv")
+
 data$round <- as.integer(data$round)
 data$leaderAction <- as.numeric(data$leaderAction)  
 data$followerAction <- as.numeric(data$followerAction)  
@@ -62,3 +64,58 @@ ggplot(data[data$round>0,], aes(x = round)) +
   labs(x = "Round", y = "Profit", color = "Actor") +
   theme_minimal()+  
   ggtitle("Profit evolution")  
+
+
+dataCritic <- read.csv("DDPG-NaiveStackelberg-Critic-1552360841.csv")
+dataCritic$followerError <- abs(dataCritic$followerProfit - dataCritic$followerEstimatedProfit)
+dataCritic$leaderError <- abs(dataCritic$leaderProfit - dataCritic$leaderEstimatedProfit)
+
+library(gridExtra)
+library(hrbrthemes)
+library(viridis)
+
+followerEstimated <- ggplot(dataCritic, aes(x = leaderAction, y = followerAction, fill = followerEstimatedProfit)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +  # Adjust color gradient as needed
+  labs(x = "leaderAction", y = "followerAction", title = "Estimated profit") +
+  theme_minimal()
+
+followerTrueProfit <- ggplot(dataCritic, aes(x = leaderAction, y = followerAction, fill = followerProfit)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +  # Adjust color gradient as needed
+  labs(x = "leaderAction", y = "followerAction", title = "True profit") +
+  theme_minimal()
+
+grid.arrange(followerEstimated, followerTrueProfit, nrow = 2)
+
+followerError <- ggplot(dataCritic, aes(x = leaderAction, y = followerAction, fill = followerError)) +
+  geom_tile() +
+  scale_fill_viridis(option="magma") +  
+  labs(x = "leaderAction", y = "followerAction", title = "Follower Error profit") +
+  theme_minimal()
+
+leaderError <- ggplot(dataCritic, aes(x = leaderAction, y = followerAction, fill = leaderError)) +
+  geom_tile() +
+  scale_fill_viridis(option="magma") +  
+  labs(x = "leaderAction", y = "followerAction", title = "Leader Error profit") +
+  theme_minimal()
+grid.arrange(followerError, leaderError, nrow = 2)
+
+ggplot(dataCritic, aes(x = leaderAction, y = followerAction, fill = leaderProfit)) +
+  geom_tile() +
+  scale_fill_viridis(option="magma") +  
+  labs(x = "leaderAction", y = "followerAction", title = "Leader true profit") +
+  theme_minimal()
+
+LeaderCriticMSE <- mean((dataCritic$leaderProfit - dataCritic$leaderEstimatedProfit)^2)
+FollowerCriticMSE <- mean((dataCritic$followerProfit - dataCritic$followerEstimatedProfit)^2)
+
+print("Leader Critic MSE: ", LeaderCriticMSE)
+print("Follower Critic MSE: ", FollowerCriticMSE)
+
+ggplot(dataCritic, aes(x = leaderAction, y = followerAction, fill = price)) +
+  geom_tile() +
+  scale_fill_viridis(option="magma") +  
+  labs(x = "leaderAction", y = "followerAction", title = "Price") +
+  theme_minimal()
+

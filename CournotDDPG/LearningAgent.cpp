@@ -92,6 +92,8 @@ void LearningAgent::train() {
             QNet.mooveCoefficients(std::move(final_critic_grad), gradientTolerance);
         }
         learningEpochsCompleted++;
+        learningRateActor = learningRateActor * decayRate;
+        learningRateCritic = learningRateCritic * decayRate;
         for (std::size_t i(0); i < batch_elems.size(); i++){
             delete batch_elems.at(i).input_critic;
             delete batch_elems.at(i).output_expected;
