@@ -1,5 +1,6 @@
 #data <- read.csv("DDPG-NaiveStackelberg-Output-1977062708.csv")
-data <- read.csv("DDPG-NaiveStackelberg-Output-1552360841.csv")
+#data <- read.csv("DDPG-NaiveStackelberg-Output-1552360841.csv")
+data <- read.csv("DDPG-NaiveCournotWithMem-Output-2631691123.csv")
 
 data$round <- as.integer(data$round)
 data$leaderAction <- as.numeric(data$leaderAction)  
@@ -32,14 +33,14 @@ ggplot(data[data$whitenoise==0,], aes(x = round)) +
   labs(x = "Round", y = "Squared Error") +  
   ggtitle("Squared Error vs Round without whitenoise")  
 
-ggplot(data, aes(x = round)) +
-  geom_point(aes(y = leaderSquaredError, color = "Leader" )) +  
-  geom_point(aes(y = followerSquaredError, color = "Follower" )) +  
-  geom_smooth(aes(y = leaderSquaredError, color = "LeaderTrend" )) +  
-  geom_smooth(aes(y = followerSquaredError, color = "FollowerTrend" )) +  
-  scale_color_manual(values = c("Leader" = "blue", "Follower" = "red", "LeaderTrend" = "darkblue", "FollowerTrend" = "darkred")) +
-  labs(x = "Round", y = "Squared Error") +  
-  ggtitle("Squared Error vs Round with whitenoise")  
+# ggplot(data, aes(x = round)) +
+#   geom_point(aes(y = leaderSquaredError, color = "Leader" )) +  
+#   geom_point(aes(y = followerSquaredError, color = "Follower" )) +  
+#   geom_smooth(aes(y = leaderSquaredError, color = "LeaderTrend" )) +  
+#   geom_smooth(aes(y = followerSquaredError, color = "FollowerTrend" )) +  
+#   scale_color_manual(values = c("Leader" = "blue", "Follower" = "red", "LeaderTrend" = "darkblue", "FollowerTrend" = "darkred")) +
+#   labs(x = "Round", y = "Squared Error") +  
+#   ggtitle("Squared Error vs Round with whitenoise")  
 
 transparency <- 1 - 0.5
 ggplot(data[data$round>0,], aes(x = round)) +
@@ -64,6 +65,10 @@ ggplot(data[data$round>0,], aes(x = round)) +
   labs(x = "Round", y = "Profit", color = "Actor") +
   theme_minimal()+  
   ggtitle("Profit evolution")  
+
+
+convergence_test(data[data$whitenoise==0,]$leaderAction, 0.9)
+convergence_test(data[data$whitenoise==0,]$followerAction, 0.9)
 
 
 dataCritic <- read.csv("DDPG-NaiveStackelberg-Critic-1552360841.csv")

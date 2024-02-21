@@ -57,16 +57,20 @@ void LearningAgent::train() {
         
         // For each batch
         for (std::size_t batch_i(0); batch_i < batchsNb; batch_i++){
-            temp_outputs.clear(); temp_outputs_expected.clear(); batch_actor_grads.clear(); batch_critic_grads.clear();
+            // Used for MSE computation : temp_outputs.clear(); temp_outputs_expected.clear();
+            batch_actor_grads.clear(); batch_critic_grads.clear();
             
             for (std::size_t input_id(0); input_id < batchSize; input_id++){
                 std::size_t preid = batch_i * batchSize;
                 // Critic updating
-                akml::DynamicMatrix<float> local_output = QNet.process(*batch_elems.at(input_id + preid).input);
-                akml::DynamicMatrix<float> errorGrad = akml::ErrorFunctions::MSE.local_derivative(local_output, *batch_elems.at(input_id + preid).output_expected);
-                temp_outputs.emplace_back(std::move(local_output));
-                temp_outputs_expected.emplace_back(*batch_elems.at(input_id + preid).output_expected);
-                batch_critic_grads.emplace_back(QNet.computeErrorGradient(errorGrad));
+                //akml::DynamicMatrix<float> local_output = QNet.process(*batch_elems.at(input_id + preid).input);
+                //akml::DynamicMatrix<float> errorGrad = akml::ErrorFunctions::MSE.local_derivative(local_output, *batch_elems.at(input_id + preid).output_expected);
+                // Used for MSE computation : temp_outputs.emplace_back(std::move(local_output));
+                // Used for MSE computation : temp_outputs_expected.emplace_back(*batch_elems.at(input_id + preid).output_expected);
+                
+                //batch_critic_grads.emplace_back(QNet.computeErrorGradient(errorGrad));
+                // We try a more "concise" way with rvalues to avoid needless matrix copies
+                batch_critic_grads.emplace_back(QNet.computeErrorGradient(akml::ErrorFunctions::MSE.local_derivative(QNet.process(*batch_elems.at(input_id + preid).input), *batch_elems.at(input_id + preid).output_expected)));
                 
                 // Actor updating
                 QNet.process(*batch_elems.at(input_id + preid).input_critic);
@@ -76,10 +80,10 @@ void LearningAgent::train() {
                                                policyNet.computeErrorGradient(noErrorGradInput));
             }
             
-            std::cout << "\nEPOCH ";
+            /*std::cout << "\nEPOCH ";
             if (name != "")
                 std::cout << "(" << name << ") ";
-            std::cout << learningEpochsCompleted << " Batch " << batch_i+1 << " / " << batchsNb << " : MSE=" << akml::ErrorFunctions::MSE.sumfunction(temp_outputs, temp_outputs_expected) << " LR=" << learningRateCritic;
+            std::cout << learningEpochsCompleted << " Batch " << batch_i+1 << " / " << batchsNb << " : MSE=" << akml::ErrorFunctions::MSE.sumfunction(temp_outputs, temp_outputs_expected) << " LRc=" << learningRateCritic;*/
             
             akml::DynamicMatrix<float> final_actor_grad = akml::mean(batch_actor_grads);
             akml::DynamicMatrix<float> final_critic_grad = akml::mean(batch_critic_grads);
@@ -102,6 +106,11 @@ void LearningAgent::train() {
     target_policyNet.polyakMerge(policyNet, polyakCoef);
     target_QNet.polyakMerge(QNet, polyakCoef);
     
-    
+    if (learningEpochsCompleted % 1000){
+        std::cout << "\nEPOCH ";
+        if (name != "")
+            std::cout << "(" << name << ") ";
+        std::cout << learningEpochsCompleted /*<< " MSE=" << akml::ErrorFunctions::MSE.sumfunction(temp_outputs, temp_outputs_expected)*/ << " LRc=" << learningRateCritic << " LRa=" << learningRateActor;
+    }
     
 }

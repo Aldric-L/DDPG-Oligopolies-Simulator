@@ -1,7 +1,7 @@
-data <- read.csv("DDPG-StrangeCournotWithMem-Output-1562059222.csv")
+#data <- read.csv("DDPG-StrangeCournotWithMem-Output-1562059222.csv")
 #Perfect cournot convergence : 
-#ata <- read.csv("DDPG-StrangeCournot-Output-1540358815.csv")
-
+#data <- read.csv("DDPG-StrangeCournot-Output-1540358815.csv")
+data <- read.csv("DDPG-StrangeCournot-Output-2083545200.csv")
 
 data$round <- as.integer(data$round)
 data$leaderAction <- as.numeric(data$leaderAction)  
@@ -32,9 +32,20 @@ ggplot(data[data$round>0,], aes(x = round)) +
   theme_minimal()
 
 
+convergence_test <- function(actionVector, threshold_percent) {
+  threshold <- round(length(actionVector)*threshold_percent)
+  
+  test_stat <- 0
+  local_mean <- mean(actionVector[c(threshold:length(actionVector))])
+  for (i in threshold:length(actionVector))
+    test_stat <- (actionVector[i] - local_mean)^2
+  test_stat <- sqrt(test_stat/(length(actionVector)-threshold))
+  return(list("mean" = local_mean, "estimatedSigma" = test_stat, "threshold" = threshold, "obs" = length(actionVector)-threshold))
+}
+
 ggplot(data[data$round>0,], aes(x = round)) +
-  geom_smooth(aes(y = leaderEstimatedProfit, color = "Leader", style="dotted"), se = FALSE) +
-  geom_smooth(aes(y = followerEstimatedProfit, color = "Follower", style="dotted"), se = FALSE) +
+  geom_smooth(aes(y = leaderEstimatedProfit, color = "Leader"), se = FALSE) +
+  geom_smooth(aes(y = followerEstimatedProfit, color = "Follower"), se = FALSE) +
   geom_smooth(aes(y = leaderProfit, color = "LeaderTrend"), se = FALSE) +
   geom_smooth(aes(y = followerProfit, color = "FollowerTrend"), se = FALSE) +
   geom_line(aes(y = cournotProfit, color = "Cournot")) +
@@ -44,3 +55,7 @@ ggplot(data[data$round>0,], aes(x = round)) +
   labs(x = "Round", y = "Profit", color = "Actor") +
   theme_minimal()+  
   ggtitle("Profit evolution")  
+
+convergence_test(data[data$whitenoise==0,]$leaderAction, 0.9)
+convergence_test(data[data$whitenoise==0,]$followerAction, 0.9)
+

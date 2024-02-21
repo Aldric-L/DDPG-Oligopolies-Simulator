@@ -117,7 +117,7 @@ public:
                                       const akml::ErrorFunction<float, DynamicMatrix<float>>* errorFunc=&akml::ErrorFunctions::MSE,
                                       const GRADIENT_METHODS method=GRADIENT_METHODS::GRADIENT_DESCENT);
     
-    akml::DynamicMatrix<float> computeErrorGradient(akml::DynamicMatrix<float>& errorGrad);
+    akml::DynamicMatrix<float> computeErrorGradient(akml::DynamicMatrix<float> errorGrad);
 
     akml::DynamicMatrix<float> computeGradient();
     

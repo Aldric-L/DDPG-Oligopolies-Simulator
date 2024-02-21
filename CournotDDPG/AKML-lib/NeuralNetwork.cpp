@@ -62,7 +62,7 @@ void akml::NeuralNetwork::stochGradientTraining(const std::vector<akml::DynamicM
     
 }
 
-akml::DynamicMatrix<float> akml::NeuralNetwork::computeErrorGradient(akml::DynamicMatrix<float>& errorGrad){
+akml::DynamicMatrix<float> akml::NeuralNetwork::computeErrorGradient(akml::DynamicMatrix<float> errorGrad){
     std::vector<float> coefs;
     for (std::size_t layer_id(1); layer_id < layers.size(); layer_id++){
         DynamicMatrix<float> temp = layers.at(layer_id)->computeLayerError(errorGrad);
