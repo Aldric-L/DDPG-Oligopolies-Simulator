@@ -1,0 +1,305 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		FE3833DA2B6FAA3E008ECFD8 /* LearningAgent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FE3833D82B6FAA3E008ECFD8 /* LearningAgent.cpp */; };
+		FE5636A42B63D2AF000D3B5B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FE5636A32B63D2AF000D3B5B /* main.cpp */; };
+		FEF1F8972B974F16007CD9B8 /* oldLaunchingScript.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FEF1F8952B974F16007CD9B8 /* oldLaunchingScript.cpp */; };
+		FEF6A83F2B8F6BC000AE5E77 /* SimulationManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FEF6A83D2B8F6BC000AE5E77 /* SimulationManager.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FE56369E2B63D2AF000D3B5B /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		FE3833D82B6FAA3E008ECFD8 /* LearningAgent.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LearningAgent.cpp; sourceTree = "<group>"; };
+		FE3833D92B6FAA3E008ECFD8 /* LearningAgent.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = LearningAgent.hpp; sourceTree = "<group>"; };
+		FE3833DC2B739487008ECFD8 /* AKML-lib */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "AKML-lib"; sourceTree = "<group>"; };
+		FE5636A02B63D2AF000D3B5B /* DDPG-Oligopolies-Simulator */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "DDPG-Oligopolies-Simulator"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FE5636A32B63D2AF000D3B5B /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		FEF1F8952B974F16007CD9B8 /* oldLaunchingScript.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = oldLaunchingScript.cpp; sourceTree = "<group>"; };
+		FEF6A83D2B8F6BC000AE5E77 /* SimulationManager.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SimulationManager.cpp; sourceTree = "<group>"; };
+		FEF6A83E2B8F6BC000AE5E77 /* SimulationManager.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SimulationManager.hpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FE56369D2B63D2AF000D3B5B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		FE5636972B63D2AF000D3B5B = {
+			isa = PBXGroup;
+			children = (
+				FE5636A22B63D2AF000D3B5B /* DDPG-Oligopolies-Simulator */,
+				FE5636A12B63D2AF000D3B5B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		FE5636A12B63D2AF000D3B5B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FE5636A02B63D2AF000D3B5B /* DDPG-Oligopolies-Simulator */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FE5636A22B63D2AF000D3B5B /* DDPG-Oligopolies-Simulator */ = {
+			isa = PBXGroup;
+			children = (
+				FE3833DC2B739487008ECFD8 /* AKML-lib */,
+				FE5636A32B63D2AF000D3B5B /* main.cpp */,
+				FE3833D82B6FAA3E008ECFD8 /* LearningAgent.cpp */,
+				FE3833D92B6FAA3E008ECFD8 /* LearningAgent.hpp */,
+				FEF6A83D2B8F6BC000AE5E77 /* SimulationManager.cpp */,
+				FEF6A83E2B8F6BC000AE5E77 /* SimulationManager.hpp */,
+				FEF1F8952B974F16007CD9B8 /* oldLaunchingScript.cpp */,
+			);
+			path = "DDPG-Oligopolies-Simulator";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FE56369F2B63D2AF000D3B5B /* DDPG-Oligopolies-Simulator */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FE5636A72B63D2AF000D3B5B /* Build configuration list for PBXNativeTarget "DDPG-Oligopolies-Simulator" */;
+			buildPhases = (
+				FE56369C2B63D2AF000D3B5B /* Sources */,
+				FE56369D2B63D2AF000D3B5B /* Frameworks */,
+				FE56369E2B63D2AF000D3B5B /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "DDPG-Oligopolies-Simulator";
+			productName = CournotDDPG;
+			productReference = FE5636A02B63D2AF000D3B5B /* DDPG-Oligopolies-Simulator */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FE5636982B63D2AF000D3B5B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1520;
+				TargetAttributes = {
+					FE56369F2B63D2AF000D3B5B = {
+						CreatedOnToolsVersion = 15.2;
+					};
+				};
+			};
+			buildConfigurationList = FE56369B2B63D2AF000D3B5B /* Build configuration list for PBXProject "DDPG-Oligopolies-Simulator" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = FE5636972B63D2AF000D3B5B;
+			productRefGroup = FE5636A12B63D2AF000D3B5B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FE56369F2B63D2AF000D3B5B /* DDPG-Oligopolies-Simulator */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		FE56369C2B63D2AF000D3B5B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FEF1F8972B974F16007CD9B8 /* oldLaunchingScript.cpp in Sources */,
+				FE5636A42B63D2AF000D3B5B /* main.cpp in Sources */,
+				FEF6A83F2B8F6BC000AE5E77 /* SimulationManager.cpp in Sources */,
+				FE3833DA2B6FAA3E008ECFD8 /* LearningAgent.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		FE5636A52B63D2AF000D3B5B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		FE5636A62B63D2AF000D3B5B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		FE5636A82B63D2AF000D3B5B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_USE_OPTIMIZATION_PROFILE = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		FE5636A92B63D2AF000D3B5B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_USE_OPTIMIZATION_PROFILE = NO;
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FE56369B2B63D2AF000D3B5B /* Build configuration list for PBXProject "DDPG-Oligopolies-Simulator" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FE5636A52B63D2AF000D3B5B /* Debug */,
+				FE5636A62B63D2AF000D3B5B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FE5636A72B63D2AF000D3B5B /* Build configuration list for PBXNativeTarget "DDPG-Oligopolies-Simulator" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FE5636A82B63D2AF000D3B5B /* Debug */,
+				FE5636A92B63D2AF000D3B5B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FE5636982B63D2AF000D3B5B /* Project object */;
+}

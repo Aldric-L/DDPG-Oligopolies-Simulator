@@ -22,11 +22,11 @@ transparency <- 1 - 0.7
 ggplot(data[data$round>0,], aes(x = round)) +
   geom_point(aes(y = leaderAction, color = "Leader"), alpha = transparency) +
   geom_point(aes(y = followerAction, color = "Follower"), alpha = transparency) +
+  geom_smooth(aes(y = leaderAction, color = "LeaderTrend"), se = FALSE) +
+  geom_smooth(aes(y = followerAction, color = "FollowerTrend"), se = FALSE) +
   geom_line(aes(y = competitiveAction, color = "Competition")) +
   geom_line(aes(y = cournotAction, color = "Cournot")) +
   geom_line(aes(y = leaderBestAction, color = "Stackelberg")) +
-  geom_smooth(aes(y = leaderAction, color = "LeaderTrend"), se = FALSE) +
-  geom_smooth(aes(y = followerAction, color = "FollowerTrend"), se = FALSE) +
   scale_color_manual(values = c("Leader" = "blue", "Follower" = "red", "LeaderTrend" = "darkblue", "FollowerTrend" = "darkred", "BestFollowerTrend" = "lightpink", "BestLeaderTrend" = "lightblue", "Competition" = "green", "Cournot" = "darkgreen", "Stackelberg"="purple")) +
   labs(x = "Round", y = "Quantity", color = "Legend") +
   theme_minimal()
@@ -37,6 +37,13 @@ convergence_test <- function(actionVector, threshold_percent) {
   
   test_stat <- 0
   local_mean <- mean(actionVector[c(threshold:length(actionVector))])
+  
+  ggplot(data = NULL, aes(x = actionVector[c(threshold:length(actionVector))])) +
+    geom_density(fill = "skyblue", color = "blue", alpha = 0.5) +
+    ggtitle("Density Plot of Example Data") +
+    xlab("Data") +
+    ylab("Density")
+  
   for (i in threshold:length(actionVector))
     test_stat <- (actionVector[i] - local_mean)^2
   test_stat <- sqrt(test_stat/(length(actionVector)-threshold))
