@@ -1,6 +1,6 @@
 #ata <- read.csv("DDPG-StrangeCournot4Oligopoly-Output-3568542506(gamma=0.3).csv")
 #data <- read.csv("DDPG-StrangeCournot4Oligopoly-Output-5191810917(gamma=0.9&expNoise).csv")
-data <- read.csv("DDPG-TemporalCournot-4-6687259973.csv")
+data <- read.csv("DDPG-TemporalCournot-4-7058221150(TRUNCRESEXPDECAYED_WHITENOISE).csv")
 
 library(ggplot2)
 data$round <- as.integer(data$round)
