@@ -15,7 +15,11 @@ CPackSourceConfig.cmake
 xcdebugger
 _deps
 *.xcodeproj
-IPD-ABM.xcodeproj
+*.xcodeproj/
+DerivedData/
+*.moved-aside
+*.xccheckout
+*.xcuserstate
 *.DS_Store
 .DS_Store
 .cache
