@@ -31,9 +31,11 @@ IPD-ABM.xcodeproj
 *.Rhistory
 *.user
 *.cmake
-*.sh
 *.pbxproj
 *.plist
 *.xcuserstate
 *.xcworkspacedata
 DDPG-Oligopolies-Simulator.xcodeproj
+DDPG-Oligopolies-Simulator.xcodeproj/*
+DDPG-Oligopolies-Simulator.xcodeproj/
+Makefile
