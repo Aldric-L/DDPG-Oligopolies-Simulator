@@ -17,6 +17,7 @@
 #include <random>
 #include <string>
 #include <utility>
+#include <climits>
 
 #include "NeuralNetwork.hpp"
 #include "NeuralLayer.hpp"

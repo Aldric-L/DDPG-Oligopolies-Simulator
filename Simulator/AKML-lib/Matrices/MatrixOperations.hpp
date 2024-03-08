@@ -4,7 +4,7 @@
 //
 //  Created by Aldric Labarthe on 20/11/2023.
 //
-
+#include <climits>
 #include "MatrixInterface.hpp"
 #include "StaticMatrix.hpp"
 #include "DynamicMatrix.hpp"

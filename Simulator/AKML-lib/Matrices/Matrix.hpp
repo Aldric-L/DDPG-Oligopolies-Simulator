@@ -27,7 +27,7 @@ public:
     inline Matrix(const bool fromscratch=false) : DynamicMatrix<element_type>(ROWS, COLUMNS, fromscratch) {};
     
     inline Matrix(const std::size_t rows, const std::size_t columns, const bool fromscratch=false) : DynamicMatrix<element_type>(ROWS, COLUMNS, fromscratch) {
-        if (rows != ROWS || columns != COLUMNS)
+        if (rows != ROWS ||columns != COLUMNS)
             throw std::invalid_argument("Irregular initialization (contradictory dimension initialization).");
     }
     

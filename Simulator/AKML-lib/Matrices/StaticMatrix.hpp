@@ -39,7 +39,7 @@ public:
     }
     
     inline StaticMatrix(const std::size_t rows, const std::size_t columns, const bool fromscratch=false) : MatrixInterface<element_type>(ROWS, COLUMNS) {
-        if (rows != ROWS || columns != COLUMNS)
+        if (rows != ROWS ||columns != COLUMNS)
             throw std::invalid_argument("Irregular initialization (contradictory dimension initialization).");
         (fromscratch) ? this->createInternStorage() : this->create();
     }

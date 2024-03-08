@@ -20,6 +20,7 @@
 #include <random>
 #include <fstream>
 #include <iomanip>
+#include <climits>
 
 //#endif /* AKML_hpp */
 

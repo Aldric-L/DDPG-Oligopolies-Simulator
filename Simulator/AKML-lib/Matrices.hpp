@@ -17,6 +17,8 @@
 #include <cstddef>
 #include <concepts>
 #include <type_traits>
+#include <climits>
+
 
 #include "Matrices/MatrixInterface.hpp"
 #include "Matrices/StaticMatrix.hpp"
