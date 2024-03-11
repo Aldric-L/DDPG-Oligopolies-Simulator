@@ -3,7 +3,7 @@
 # R_MAX_VSIZE=100Gb 
 
 agents_nb <- 2
-folder_path <- "Outputs/Cournot-2-TRUNCRESEXPDECAYED_WHITENOISE-120000-Gamma0-HDecay/norenorm/"
+folder_path <- "Outputs/Cournot-2-TRUNCRESEXPDECAYED_WHITENOISE-120000-Gamma0-HDecay/"
 
 cournot2 <- c("compProfit" = 0.16469444444444442, "compQuantity" = 0.9166666666666667,
               "cournotProfit" = 0.49237370242214545, "cournotQuantity" = 0.6470588235294118,
