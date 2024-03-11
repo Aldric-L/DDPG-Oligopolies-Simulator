@@ -35,9 +35,9 @@ int main(int argc, const char * argv[]) {
     std::cout << "DDPG-Oligopolies-Simulator v0.1 - Welcome!\n";
     std::cout << "Usage: STACKELBERG|COURNOT|TEMPORAL agentsNumber maxIteration simulationsNb maxThreads \n";
     if (argc >= 2){
-        if (std::strcmp(argv[1],"STACKELBERG"))
+        if (std::strcmp(argv[1],"STACKELBERG") == 0)
             type = SimulationManager::STACKELBERG;
-        if (std::strcmp(argv[1], "COURNOT"))
+        if (std::strcmp(argv[1], "COURNOT") == 0)
             type = SimulationManager::COURNOT;
             
         try {
