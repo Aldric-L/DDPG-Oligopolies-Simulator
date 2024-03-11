@@ -19,6 +19,7 @@ class LearningAgent {
 public:
     struct replay {float prevState; float agentAction; float reward; float nextState; bool isTerminated;
         replay(float prevState, float agentAction, float reward, float nextState, bool isTerminated) : prevState(prevState), agentAction(agentAction), reward(reward), nextState(nextState), isTerminated(isTerminated) {}; };
+    static inline bool renormReward = true;
     static inline unsigned short int preLearningExpriences = 126;
     static inline std::size_t maxBufferSize = 2000;
     static inline std::size_t maxEpochsAtLearningTime = 25;
@@ -28,8 +29,8 @@ public:
     static inline std::size_t batchNumber = 32;
     static inline float gamma = 0.1;
     static inline float polyakCoef = 0.95;
-    //static inline float decayRate = 0.9998;
-    static inline float decayRate = 0.99985;
+    static inline float decayRate = 0.9998;
+    //static inline float decayRate = 0.99985;
     //static inline float learningRateActor = 0.015;
     //float learningRateActor = 0.001;
     float learningRateActor = 0.01;
@@ -49,7 +50,7 @@ protected:
     
     const akml::NeuralNetwork::initialize_list_type PolicyNetInitList = {{ { 1, nullptr }, { 8, &akml::ActivationFunctions::RELU }, { 8, &akml::ActivationFunctions::RELU }, { 1, &akml::ActivationFunctions::SIGMOID } }};
     
-    void train();
+    void train(bool mute=false);
     
 public:
     LearningAgent(std::string name="") : QNet(4), policyNet(4), accumulatedExperiences(0), target_QNet(4), target_policyNet(4), name(std::move(name)) {
@@ -85,10 +86,10 @@ public:
         
     }
     
-    void manualTrainingLaunch(){
+    void manualTrainingLaunch(bool mute=false){
         if (accumulatedExperiences >= preLearningExpriences)
             accumulatedExperiences = 0;
-        this->train();
+        this->train(mute);
     }
     
     // Debug functions

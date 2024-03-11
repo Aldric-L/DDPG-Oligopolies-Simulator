@@ -7,7 +7,7 @@
 
 #include "SimulationManager.hpp"
 
-void SimulationManager::processSimulation() {
+void SimulationManager::processSimulation(bool mute) {
     float prevprice = 0.f;
     std::vector<std::vector<float>> buffer; buffer.reserve(128);
     std::thread logBufferize;
@@ -91,7 +91,7 @@ void SimulationManager::processSimulation() {
             }
         }
         for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
-            agentThreads.emplace_back(&LearningAgent::manualTrainingLaunch, &agents[agent_i]);
+            agentThreads.emplace_back(&LearningAgent::manualTrainingLaunch, &agents[agent_i], mute);
         }
         for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
             if (agentThreads.at(agent_i).joinable())

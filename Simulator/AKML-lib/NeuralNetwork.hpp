@@ -49,10 +49,16 @@ public:
     
     inline NeuralNetwork(const NeuralNetwork& othernet) :
         customOriginField(othernet.getCustomOriginField()),
-        layers(othernet.getLayers()),
         layers_nb(othernet.getLayerNb()),
         input_dim(othernet.getLayer(0)->getNeuronNumber()),
         output_dim(othernet.getLayer(othernet.getLayerNb()-1)->getNeuronNumber()) {
+            for (std::size_t layer_id(0); layer_id < othernet.getLayers().size(); layer_id++){
+                layers.push_back(new NeuralLayer(*(othernet.getLayers().at(layer_id))));
+            }
+            for (std::size_t i(0); i < layers.size(); i++){
+                layers.at(i)->setPrevLayer((i != 0) ? layers.at(i-1) : nullptr);
+                layers.at(i)->setNextLayer((i+1 < layers.size()) ? layers.at(i+1) : nullptr);
+            }
     };
     
     inline void operator=(const NeuralNetwork& othernet){
@@ -63,6 +69,10 @@ public:
         }
         for (std::size_t layer_id(0); layer_id < othernet.getLayers().size(); layer_id++){
             layers.push_back(new NeuralLayer(*(othernet.getLayers().at(layer_id))));
+        }
+        for (std::size_t i(0); i < layers.size(); i++){
+            layers.at(i)->setPrevLayer((i != 0) ? layers.at(i-1) : nullptr);
+            layers.at(i)->setNextLayer((i+1 < layers.size()) ? layers.at(i+1) : nullptr);
         }
         layers_nb = othernet.getLayerNb();
         input_dim = othernet.getLayer(0)->getNeuronNumber();
@@ -83,6 +93,7 @@ public:
             }
         }
         for (std::size_t i(0); i < layers_list.size(); i++){
+            layers.at(i)->setPrevLayer((i != 0) ? layers.at(i-1) : nullptr);
             layers.at(i)->setNextLayer((i+1 < layers_list.size()) ? layers.at(i+1) : nullptr);
         }
         

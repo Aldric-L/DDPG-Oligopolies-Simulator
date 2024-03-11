@@ -7,13 +7,14 @@
 
 #include "LearningAgent.hpp"
 
-float renorm(float val) {
-    float l = 5;
-    float inter = 2.f * l /3.f;
-    return 1.f / (1.f + std::exp(-1.f * l * val + inter));
-}
-
-void LearningAgent::train() {
+void LearningAgent::train(bool mute) {
+    auto renorm = [](float val) {
+        if (!renormReward)
+            return val;
+        float l = 5;
+        float inter = 2.f * l /3.f;
+        return 1.f / (1.f + std::exp(-1.f * l * val + inter));
+    };
     
     struct innerBatchInputs {
         akml::DynamicMatrix<float>* input;
@@ -115,7 +116,7 @@ void LearningAgent::train() {
     target_policyNet.polyakMerge(policyNet, polyakCoef);
     target_QNet.polyakMerge(QNet, polyakCoef);
     
-    if (learningEpochsCompleted % 1000){
+    if (learningEpochsCompleted % 1000 && !mute){
         std::cout << "\nEPOCH ";
         if (name != "")
             std::cout << "(" << name << ") ";

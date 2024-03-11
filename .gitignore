@@ -33,6 +33,7 @@ DerivedData/
 .Rproj.user
 *.RData
 *.Rhistory
+*.Renviron
 *.user
 *.cmake
 *.pbxproj

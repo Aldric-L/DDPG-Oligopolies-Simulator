@@ -182,11 +182,24 @@ public:
         this->operator=(matrix);
     }
     
+    inline void forceAssignement(DynamicMatrix<element_type>&& matrix){
+        this->resize(matrix.getNRows(), matrix.getNColumns());
+        this->operator=(std::move(matrix));
+    }
+    
     inline void forceByteCopy(const element_type* storage, std::size_t len=0){
+        if (!this->isInitialized())
+            this->createInternStorage();
+        if (len > (this->rows)*(this->columns))
+            throw std::runtime_error("Trying to force byte copy in a smaller matrix. Undefined behavior.");
+            //this->m_data_end = this->m_data+len;
         std::copy(storage, storage + ((len == 0) ? (this->rows)*(this->columns) : len), this->m_data);
     }
     
     inline void forceByteCopy(const MatrixInterface<element_type>& target){
+        if (target.getStorageLen() > this->getStorageLen())
+            throw std::runtime_error("Trying to force byte copy in a smaller matrix. Undefined behavior.");
+            //this->m_data_end = this->m_data+target.getStorageLen();
         std::copy(target.getStorage(), target.getStorageEnd(), this->m_data);
     }
     
@@ -241,7 +254,7 @@ public:
         return *this;
     }
     
-    template <akml::MatrixInterfaceConcept<element_type> MatrixC>
+    /*template <akml::MatrixInterfaceConcept<element_type> MatrixC>
     //inline DynamicMatrix<element_type>& operator=(const DynamicMatrix<element_type>& other){
     inline DynamicMatrix<element_type>& operator=(const MatrixC&& other){
         //if (this != &other){
@@ -258,7 +271,7 @@ public:
         //}
         
         return *this;
-    }
+    }*/
     
     inline DynamicMatrix<element_type>& operator=(DynamicMatrix<element_type>&& other){
         if (this != &other) {
