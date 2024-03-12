@@ -1,6 +1,6 @@
 //
 //  LearningAgent.cpp
-//  CournotDDPG
+//  DDPG Oligopolies Simulator
 //
 //  Created by Aldric Labarthe on 04/02/2024.
 //

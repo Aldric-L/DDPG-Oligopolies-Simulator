@@ -1,6 +1,6 @@
 //
 //  SimulationManager.hpp
-//  CournotDDPG
+//  DDPG Oligopolies Simulator
 //
 //  Created by Aldric Labarthe on 28/02/2024.
 //
@@ -53,7 +53,7 @@ protected:
     std::size_t agentsNumber;
     std::size_t maxIterations;
     std::vector<LearningAgent> agents;
-    std::vector<std::size_t>* leaders;
+    std::vector<std::size_t> leaders;
     akml::CSV_Saver<akml::DynamicMatrixSave<float>> LogManager;
     OLIGOPOLY_TYPE localSimulationType;
     
@@ -66,14 +66,15 @@ public:
     inverseDemand(localInverseDemand == nullptr ? &SimulationManager::STANDARD_LIN_INVDEMAND : localInverseDemand),
     cost(localCost == nullptr ? &SimulationManager::QUAD_COST : localCost),
     whitenoiseMethod(localWhitenoiseMethod == nullptr ? &SimulationManager::EXPDECAYED_WHITENOISE : localWhitenoiseMethod) {
-        if (localSimulationType == STACKELBERG)
-            leaders = new std::vector<std::size_t>;
-        else
-            leaders = nullptr;
         agents.reserve(agentsNumber);
+        if (agentsNumber < 2)
+            throw std::invalid_argument("This simulator is not able to make single agent simulations.");
+        
         for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
             agents.emplace_back("Agent" + std::to_string(agent_i+1));
         }
+        if (localSimulationType == STACKELBERG)
+            leaders.push_back(0);
         
         std::vector<std::string> parametersName;
         parametersName.reserve(2 + agentsNumber * 3);
@@ -90,10 +91,7 @@ public:
         LogManager.reserve(std::min((std::size_t)2001, maxIterations));
     };
     
-    inline ~SimulationManager(){
-        if (leaders != nullptr)
-            delete leaders;
-    }
+    inline ~SimulationManager() = default;
     
     inline void setGamma(const float gamma){ LearningAgent::gamma = gamma; }
     inline void setDecayrate(const float dr){ LearningAgent::decayRate = dr; }
@@ -101,6 +99,22 @@ public:
     inline void setWNMethod(const std::function<float(std::size_t, std::size_t)> method){ whitenoiseMethod = method; }
     
     inline float computeProfit(float p, float q){ return (float)( K * ( std::max(0.f, p) * q - cost(q)) + B  ); }
+    
+    inline static std::string getOligopolyName(SimulationManager::OLIGOPOLY_TYPE oligopoly){
+        switch (oligopoly) {
+            case STACKELBERG:
+                return "Stackelberg";
+                
+            case COURNOT:
+                return "Cournot";
+                
+            case TEMPORAL_COURNOT:
+                return "TemporalCournot";
+                
+            default:
+                throw std::range_error("Unable to find oligopoly name.");
+        }
+    }
     
     void processSimulation(bool mute=false);
 };
