@@ -254,7 +254,7 @@ public:
         return *this;
     }
     
-    /*template <akml::MatrixInterfaceConcept<element_type> MatrixC>
+    template <akml::MatrixInterfaceConcept<element_type> MatrixC>
     //inline DynamicMatrix<element_type>& operator=(const DynamicMatrix<element_type>& other){
     inline DynamicMatrix<element_type>& operator=(const MatrixC&& other){
         //if (this != &other){
@@ -271,7 +271,7 @@ public:
         //}
         
         return *this;
-    }*/
+    }
     
     inline DynamicMatrix<element_type>& operator=(DynamicMatrix<element_type>&& other){
         if (this != &other) {

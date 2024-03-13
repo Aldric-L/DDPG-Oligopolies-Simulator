@@ -1,6 +1,6 @@
 //
 //  LearningAgent.hpp
-//  CournotDDPG
+//  DDPG Oligopolies Simulator
 //
 //  Created by Aldric Labarthe on 04/02/2024.
 //
@@ -24,16 +24,12 @@ public:
     static inline std::size_t maxBufferSize = 2000;
     static inline std::size_t maxEpochsAtLearningTime = 25;
     static inline float gradientTolerance = 1e-07;
-    //static inline std::size_t batchSize = 15;
     static inline std::size_t batchSize = 64;
     static inline std::size_t batchNumber = 32;
     static inline float gamma = 0.1;
     static inline float polyakCoef = 0.95;
     static inline float decayRate = 0.9998;
-    //static inline float decayRate = 0.99985;
-    //static inline float learningRateActor = 0.015;
-    //float learningRateActor = 0.001;
-    float learningRateActor = 0.01;
+    float learningRateActor = 0.015;
     float learningRateCritic = 0.1;
     
     
