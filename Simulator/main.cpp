@@ -122,6 +122,8 @@ bool handleOptions(int argc, const char * argv[], options& localoptions) {
             return -1;
         }
     }
+    if (localoptions.type == SimulationManager::OLIGOPOLY_TYPE::TEMPORAL_COURNOT && !localoptions.profitNormalization)
+        std::cerr << "Alert! Profit normalization is disabled. Temporal Cournot should be implemented with profit normalization. \n";
     return true;
 }
 
@@ -132,9 +134,9 @@ int main(int argc, const char * argv[]) {
       // If we want to force default values:
         .type=SimulationManager::STACKELBERG,
         .simulationsNb = 2,
-        .profitNormalization = false,
-        .decayRate = 1.f, // or 0.9999
         .gamma = 0.f,
+        .profitNormalization = false,
+        .decayRate = 1.f // or 0.9999
     };
     
     if (!handleOptions(argc, argv, localoptions))
