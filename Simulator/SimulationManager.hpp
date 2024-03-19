@@ -9,6 +9,7 @@
 #define SimulationManager_hpp
 
 #include <stdio.h>
+#include <string>
 #include <functional>
 #include <vector>
 #include <thread>
@@ -19,6 +20,7 @@
 class SimulationManager {
 public:
     enum OLIGOPOLY_TYPE {STACKELBERG, COURNOT, TEMPORAL_COURNOT};
+    enum WN_DECAY_METHOD {LIN, EXP, SIG, TRUNC_EXP, TRUNC_EXP_RES};
     
     // Hyperparameters
     inline static float C = 0.2;
@@ -26,6 +28,8 @@ public:
     inline static float K = 0.98;
     inline static float B = 0;
     inline static float A = 0.45;
+    
+    inline static float maxWhiteNoise = 0.3;
     
     inline static const float STANDARD_LIN_DEMAND (float p) { return (float)(D - p); }
     inline static const float STANDARD_LIN_INVDEMAND (float q) { return (float)(D - q); }
@@ -52,7 +56,7 @@ protected:
     
     std::size_t agentsNumber;
     std::size_t maxIterations;
-    std::vector<LearningAgent> agents;
+    std::vector<LearningAgent*> agents;
     std::vector<std::size_t> leaders;
     akml::CSV_Saver<akml::DynamicMatrixSave<float>> LogManager;
     OLIGOPOLY_TYPE localSimulationType;
@@ -71,7 +75,7 @@ public:
             throw std::invalid_argument("This simulator is not able to make single agent simulations.");
         
         for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
-            agents.emplace_back("Agent" + std::to_string(agent_i+1));
+            agents.push_back(new LearningAgent("Agent" + std::to_string(agent_i+1)));
         }
         if (localSimulationType == STACKELBERG)
             leaders.push_back(0);
@@ -91,32 +95,48 @@ public:
         LogManager.reserve(std::min((std::size_t)2001, maxIterations));
     };
     
-    inline ~SimulationManager() = default;
+    inline ~SimulationManager() {
+        for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
+            delete agents[agent_i];
+        }
+    };
+
     
     inline void setGamma(const float gamma){ LearningAgent::gamma = gamma; }
     inline void setDecayrate(const float dr){ LearningAgent::decayRate = dr; }
     inline void disableProfitRenormalization(){ LearningAgent::renormReward = !LearningAgent::renormReward; }
     inline void setWNMethod(const std::function<float(std::size_t, std::size_t)> method){ whitenoiseMethod = method; }
+    inline void setLearningRates(const float actorLR, const float criticLR) {
+        for (std::size_t agent_i(0); agent_i < agents.size(); agent_i++){
+            agents.at(agent_i)->learningRateActor = actorLR;
+            agents.at(agent_i)->learningRateCritic = criticLR;
+        }
+    }
     
     inline float computeProfit(float p, float q){ return (float)( K * ( std::max(0.f, p) * q - cost(q)) + B  ); }
     
     inline static std::string getOligopolyName(SimulationManager::OLIGOPOLY_TYPE oligopoly){
         switch (oligopoly) {
-            case STACKELBERG:
-                return "Stackelberg";
-                
-            case COURNOT:
-                return "Cournot";
-                
-            case TEMPORAL_COURNOT:
-                return "TemporalCournot";
-                
-            default:
-                throw std::range_error("Unable to find oligopoly name.");
+            case STACKELBERG: return "Stackelberg";
+            case COURNOT: return "Cournot";
+            case TEMPORAL_COURNOT: return "TemporalCournot";
+            default: throw std::range_error("Unable to find oligopoly name.");
         }
     }
     
-    void processSimulation(bool mute=false);
+    inline static std::string getWNDecayMethodName(SimulationManager::WN_DECAY_METHOD decayMethod){
+        switch (decayMethod) {
+            case LIN: return "LIN";
+            case EXP: return "EXP";
+            case SIG: return "SIG";
+            case TRUNC_EXP: return "TRUNC_EXP";
+            case TRUNC_EXP_RES: return "TRUNC_EXP_RES";
+            default: throw std::range_error("Unable to find WN name.");
+        }
+    }
+    
+    std::string processSimulation(bool mute=false);
 };
 
 #endif /* SimulationManager_hpp */
+

@@ -4,7 +4,7 @@
 
 agents_nb <- 2
 #folder_path <- "Outputs/Cournot-2-TRUNCRESEXPDECAYED_WHITENOISE-120000-Gamma0-HDecay/"
-folder_path <- "Outputs/Stackelberg-2-LINDECAYED_WHITENOISE-90000-Gamma0-HDecay/"
+folder_path <- "Outputs/workingonit/"
 
 cournot2 <- c("compProfit" = 0.16469444444444442, "compQuantity" = 0.9166666666666667,
               "cournotProfit" = 0.49237370242214545, "cournotQuantity" = 0.6470588235294118,
@@ -24,13 +24,14 @@ stackelberg2 <- c(
 
 lightmode <- FALSE
 
-mode <- stackelberg2
-model <- "STACKELBERG"
+mode <- cournot2
+model <- "COURNOT"
 
 ## Import files
 library(data.table)
 csv_files <- list.files(path = folder_path, pattern = "\\.csv$", full.names = TRUE)
 simuls <- list()
+
 for (i in 1:length(csv_files)) {
   file_name <- tools::file_path_sans_ext(basename(csv_files[i]))
   last_number <- as.numeric(sub('.*-(\\d+)$', '\\1', file_name))
@@ -41,10 +42,15 @@ for (i in 1:length(csv_files)) {
   data <- subset(data, select=-c(iteration))
   data$totalQuantity <- data$agent1Action
   data$totalProfit <- data$agent1Profit
+  data$agent1CriticError <- (data$agent1EstimatedProfit - data$agent1Profit)/data$agent1Profit
+  data$criticError <- data$agent1CriticError
   for (agent in 2:agents_nb){
     data$totalQuantity <- data$totalQuantity + data[, paste("agent", agent, "Action", sep="")]
     data$totalProfit <- data$totalProfit + data[, paste("agent", agent, "Profit", sep="")]
+    data[, paste("agent", agent, "CriticError", sep="")] <- (data[, paste("agent", agent, "EstimatedProfit", sep="")] - data[, paste("agent", agent, "Profit", sep="")])/data[, paste("agent", agent, "Profit", sep="")]
+    data$criticError <- data$criticError + data[, paste("agent", agent, "CriticError", sep="")] 
   }
+  data$criticError <- data$criticError / agents_nb
   assign(paste("sim_", toString(last_number), sep=""), data)
   simuls <- append(simuls, paste("sim_", toString(last_number), sep=""))
   
@@ -85,24 +91,48 @@ convergence_test <- function(actionVector, threshold_percent) {
 library(ggplot2)
 ## Total quantity plot
 ggplot(simulsData[simulsData$whitenoise==0,], aes(x=round, y=totalQuantity, group=simulName, color=simulName)) +
-  geom_point(alpha = 0.01) +
-  geom_smooth(se = FALSE) +
+  #geom_point(alpha = 0.01, aes(color = "Simulations")) +
   geom_line(aes(y = agents_nb * mode[["compQuantity"]], color = "Competition")) +
   geom_line(aes(y = agents_nb * mode[["cartelQuantity"]], color = "Cartel")) +
-  geom_line(aes(y = mode[["modelTotalQuantity"]], color = model)) +
+  geom_line(aes(y = mode[["modelTotalQuantity"]], color = "Expected Quantity")) +
+  geom_smooth(se = FALSE, linewidth=0.1, aes(color = "Simulations")) +
+  theme_minimal() + 
   labs(x = "Round", y = "Total Quantity", color = "Legend") +
-  theme_minimal()
+  ylim(0,2)
+
+ggplot(simulsData[simulsData$whitenoise==0,], aes(x=round, group=simulName, color=simulName)) +
+  #geom_point(alpha = 0.01, aes(color = "Simulations")) +
+  geom_line(aes(y = mode[["compQuantity"]], color = "Competition")) +
+  geom_line(aes(y = mode[["cartelQuantity"]], color = "Cartel")) +
+  {if (model == "COURNOT")geom_line(aes(y = mode[["cournotQuantity"]], color = "Cournot")) } + 
+  {if (model == "STACKELBERG")geom_line(aes(y = mode[["lowQuantity"]], color="Stackelberg Leader")) } +
+  {if (model == "STACKELBERG")geom_line(aes(y = mode[["highQuantity"]], color="Stackelberg Follower"))} + 
+  geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent1Action, color = "Simulations")) +
+  geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent2Action, color = "Simulations")) +
+  theme_minimal() + 
+  labs(x = "Round", y = "Quantity", color = "Legend") +
+  ylim(0,1)
 
 ## Total profit plot
 ggplot(simulsData[simulsData$whitenoise==0,], aes(x=round, y=totalProfit, group=simulName, color=simulName)) +
-  geom_point(alpha = 0.01) +
-  geom_smooth(se = FALSE) +
+  #geom_point(alpha = 0.01, aes(color = "Simulations")) +
   geom_line(aes(y = agents_nb * mode[["compProfit"]], color = "Competition")) +
-  geom_line(aes(y = mode[["modelTotalProfit"]], color = model)) +
   geom_line(aes(y = agents_nb * mode[["cartelProfit"]], color = "Cartel")) +
-  labs(x = "Round", y = "Total profit", color = "Legend") +
-  theme_minimal()
+  geom_line(aes(y = mode[["modelTotalProfit"]], color = "Expected Profit")) +
+  geom_smooth(se = FALSE, linewidth=0.1, aes(color = "Simulations")) +
+  theme_minimal() + 
+  labs(x = "Round", y = "Total Profit", color = "Legend") +
+  ylim(0,2)
 
+
+## Critic error
+ggplot(simulsData[simulsData$whitenoise==0,], aes(x=round, y=criticError, group=simulName, color=simulName)) +
+  geom_point(alpha = 0.5, size=0.1, aes(color = "Simulations Values")) +
+  geom_smooth(se = FALSE, linewidth=0.1, aes(color = "Simulations")) +
+  scale_color_manual(values = c("Simulations (Values)" = "lightblue", 
+                                "Simulations (Trend)" = "darkblue")) +
+  theme_minimal() + 
+  labs(x = "Round", y = "Critic estimation error", color = "Legend")
 
 ## One simul plot
 s <- get(simuls[[1]])
@@ -133,8 +163,8 @@ ggplot(s[s$whitenoise==0,], aes(x = round)) +
                                 "Competition" = "green", 
                                 "Cournot" = "darkgreen", 
                                 "Cartel"="purple")) +
-  labs(x = "Round", y = "Quantity", color = "Legend") +
-  theme_minimal()
+  theme_minimal() +
+  labs(x = "Round", y = "Quantity", color = "Legend")
 
 ggplot(s[s$whitenoise==0,], aes(x = round)) +
   geom_point(aes(y = agent2Profit, color = "agent2"), alpha = 0.1) +
@@ -165,15 +195,41 @@ ggplot(s[s$whitenoise==0,], aes(x = round)) +
   labs(x = "Round", y = "Profit", color = "Legend") +
   theme_minimal()
 
+ggplot(s[s$whitenoise==0,], aes(x = round)) +
+  geom_point(aes(y = agent2CriticError, color = "agent2"), alpha = 0.1) +
+  geom_point(aes(y = agent1CriticError, color = "agent1"), alpha = 0.1) +
+  geom_smooth(aes(y = agent1CriticError, color = "agent1Trend"), se = FALSE) +
+  geom_smooth(aes(y = agent2CriticError, color = "agent2Trend"), se = FALSE) +
+  # geom_line(aes(y = leaderBestAction, color = "Stackelberg")) +
+  scale_color_manual(values = c("agent1" = "blue", 
+                                "agent2" = "yellow", 
+                                "agent3" = "grey", 
+                                "agent4" = "red", 
+                                "meanTrend" = "pink", 
+                                "agent1Trend" = "darkblue", 
+                                "agent2Trend" = "yellow",
+                                "agent3Trend" = "darkgrey",
+                                "agent4Trend" = "darkred",
+                                "totalTrend" = "black",
+                                "Competition" = "green", 
+                                "Cournot" = "darkgreen", 
+                                "Cartel"="purple")) +
+  labs(x = "Round", y = "Profit estimation error", color = "Legend") +
+  theme_minimal()
+
+# One whitenoise
+ggplot(data = s[s$whitenoise > 0,], aes(x=round, y=whitenoise)) + geom_point()
+
 # Density plots
 convergenceTotalActions <- c()
 followerActions <- c()
 leaderActions <- c()
 for (i in 1:length(simuls)) {
   s <- get(simuls[[i]])
-  convergenceTotalActions <- append(convergenceTotalActions, convergence_test(s$totalQuantity, 0.95)$mean)
-  a1 <- convergence_test(s$agent1Action, 0.95)$mean
-  a2 <- convergence_test(s$agent2Action, 0.95)$mean
+  s <- s[s$whitenoise==0,]
+  convergenceTotalActions <- append(convergenceTotalActions, convergence_test(s$totalQuantity, 0.98)$mean)
+  a1 <- convergence_test(s$agent1Action, 0.98)$mean
+  a2 <- convergence_test(s$agent2Action, 0.98)$mean
   followerActions <- append(followerActions, min(a1, a2))
   leaderActions <- append(leaderActions, max(a1, a2))
   rm(s)
@@ -212,6 +268,29 @@ ggplot(tmp) +
   labs(x = "Selected quantity",
        y = "Density", color = "Legend")
 
-rm(tmp)
+ggplot(tmp) +
+  geom_density(aes(x = leaderActions+followerActions), alpha = 0.5, fill = "orange") +
+  stat_function(fun = dnorm, n = 101, args = list(mean = mean(tmp$totalActions), sd = sd(tmp$totalActions))) + 
+  geom_vline(xintercept=median(leaderActions+followerActions), color="red") + 
+  geom_vline(xintercept=mode[["modelTotalQuantity"]])  + 
+  geom_vline(xintercept=mode[["modelTotalQuantity"]]*0.95, color="blue", linetype="dotted") + 
+  geom_vline(xintercept=mode[["modelTotalQuantity"]]*1.05, color="blue", linetype="dotted") + 
+  geom_vline(xintercept=mode[["modelTotalQuantity"]]*0.85, color="darkgreen", linetype="dotted") + 
+  geom_vline(xintercept=mode[["modelTotalQuantity"]]*1.15, color="darkgreen", linetype="dotted") + 
+  labs(x = "Selected quantity",
+       y = "Density", color = "Legend")
 
+
+# Share of correct values in the CI interval of modelQuantity +/- 5%
+CI5share <- nrow(tmp[tmp$totalActions>=mode[["modelTotalQuantity"]]*0.95&tmp$totalActions<=mode[["modelTotalQuantity"]]*1.05,])/nrow(tmp)
+print(CI5share)
+CI10share <- nrow(tmp[tmp$totalActions>=mode[["modelTotalQuantity"]]*0.90&tmp$totalActions<=mode[["modelTotalQuantity"]]*1.10,])/nrow(tmp)
+print(CI10share)
+CI15share <- nrow(tmp[tmp$totalActions>=mode[["modelTotalQuantity"]]*0.85&tmp$totalActions<=mode[["modelTotalQuantity"]]*1.15,])/nrow(tmp)
+print(CI15share)
+
+shapiro.test(tmp$totalActions)
+
+rm(tmp)
+## ggplot() + geom_density(aes(x = notes), alpha = 0.5, fill = "orange") + xlim(0, 20) +   stat_function(fun = dnorm, n = 101, args = list(mean = 10, sd = 3)) 
 

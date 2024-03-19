@@ -29,7 +29,7 @@ public:
     static inline float gamma = 0.1;
     static inline float polyakCoef = 0.95;
     static inline float decayRate = 0.9998;
-    float learningRateActor = 0.015;
+    float learningRateActor = 0.01;
     float learningRateCritic = 0.1;
     
     

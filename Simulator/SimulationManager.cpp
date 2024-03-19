@@ -7,17 +7,16 @@
 
 #include "SimulationManager.hpp"
 
-void SimulationManager::processSimulation(bool mute) {
+std::string SimulationManager::processSimulation(bool mute) {
     struct agentLog { float prevState, action, profit; };
     float prevprice = 0.f;
-    std::vector<std::vector<agentLog>> buffer; buffer.reserve(128);
+    std::vector<std::vector<agentLog>> buffer (128); //buffer.reserve(128);
     std::thread logBufferize;
     std::vector<std::thread> agentThreads;
     agentThreads.reserve(agentsNumber);
     for (std::size_t iteration(0); iteration <= maxIterations/128; iteration++){
-        buffer.clear();
         for (std::size_t inside_iteration(0); inside_iteration < 128; inside_iteration++){
-            std::vector<agentLog> iterationBuffer(agentsNumber);
+            buffer.at(inside_iteration).resize(agentsNumber);
             akml::DynamicMatrix<float> iterationLogSynthesis(2 + agentsNumber * 3, 1);
             // IterationLogSynthesis: (akml::DynamicMatrix (3*agentsNumber+2)x1)
             // 0: iteration
@@ -29,7 +28,7 @@ void SimulationManager::processSimulation(bool mute) {
             // endfor
             
             std::size_t it = inside_iteration + iteration*128;
-            float whitenoise = ((it % 10 == 0) ? 0.f : 0.3 * (whitenoiseMethod(it, maxIterations)));
+            float whitenoise = ((it % 10 == 0) ? 0.f : maxWhiteNoise * (whitenoiseMethod(it, maxIterations)));
             iterationLogSynthesis[{0, 0}] = (float)it;
             iterationLogSynthesis[{1, 0}] = whitenoise;
             
@@ -39,22 +38,25 @@ void SimulationManager::processSimulation(bool mute) {
             
             switch (localSimulationType) {
                 case STACKELBERG:
+                    // First we process all leaders with qty input of 0
                     for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
+                        // If agent_i is not leader... we skip
                         if (std::find(leaders.begin(), leaders.end(), agent_i) == leaders.end())
                             continue;
-                        iterationBuffer.at(agent_i).action = agents[agent_i].play(0.f, whitenoise);
-                        iterationLogSynthesis[{2+3*agent_i, 0}] = iterationBuffer.at(agent_i).action;
-                        iterationBuffer.at(agent_i).prevState = 0.f;
-                        totalQuantity += iterationBuffer.at(agent_i).action;
+                        buffer.at(inside_iteration).at(agent_i).action = agents[agent_i]->play(0.f, whitenoise);
+                        iterationLogSynthesis[{2+3*agent_i, 0}] = buffer.at(inside_iteration).at(agent_i).action;
+                        buffer.at(inside_iteration).at(agent_i).prevState = 0.f;
+                        totalQuantity += buffer.at(inside_iteration).at(agent_i).action;
                     }
                     leadersQuantity = totalQuantity;
                     for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
+                        // If agent_i is leader... we skip
                         if (std::find(leaders.begin(), leaders.end(), agent_i) != leaders.end())
                             continue;
-                        iterationBuffer.at(agent_i).action = agents[agent_i].play(leadersQuantity, whitenoise);
-                        iterationLogSynthesis[{2+3*agent_i, 0}] = iterationBuffer.at(agent_i).action;
-                        iterationBuffer.at(agent_i).prevState = leadersQuantity;
-                        totalQuantity += iterationBuffer.at(agent_i).action;
+                        buffer.at(inside_iteration).at(agent_i).action = agents[agent_i]->play(leadersQuantity, whitenoise);
+                        iterationLogSynthesis[{2+3*agent_i, 0}] = buffer.at(inside_iteration).at(agent_i).action;
+                        buffer.at(inside_iteration).at(agent_i).prevState = leadersQuantity;
+                        totalQuantity += buffer.at(inside_iteration).at(agent_i).action;
                     }
                     break;
                     
@@ -67,44 +69,43 @@ void SimulationManager::processSimulation(bool mute) {
                                     totalOtherActions += buffer.front().at(ai).action;
                             }
                         }
-                        iterationBuffer.at(agent_i).prevState = totalOtherActions;
-                        iterationBuffer.at(agent_i).action = agents[agent_i].play(totalOtherActions, whitenoise);
-                        iterationLogSynthesis[{2+3*agent_i, 0}] = iterationBuffer.at(agent_i).action;
-                        totalQuantity += iterationBuffer.at(agent_i).action;
+                        buffer.at(inside_iteration).at(agent_i).prevState = totalOtherActions;
+                        buffer.at(inside_iteration).at(agent_i).action = agents[agent_i]->play(totalOtherActions, whitenoise);
+                        iterationLogSynthesis[{2+3*agent_i, 0}] = buffer.at(inside_iteration).at(agent_i).action;
+                        totalQuantity += buffer.at(inside_iteration).at(agent_i).action;
                     }
                     break;
                     
                 case TEMPORAL_COURNOT:
                     for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
-                        iterationBuffer.at(agent_i).action = agents[agent_i].play(prevprice, whitenoise);
-                        iterationLogSynthesis[{2+3*agent_i, 0}] = iterationBuffer.at(agent_i).action;
-                        iterationBuffer.at(agent_i).action = iterationLogSynthesis[{2+3*agent_i, 0}];
-                        iterationBuffer.at(agent_i).prevState = prevprice;
+                        buffer.at(inside_iteration).at(agent_i).action = agents[agent_i]->play(prevprice, whitenoise);
+                        iterationLogSynthesis[{2+3*agent_i, 0}] = buffer.at(inside_iteration).at(agent_i).action;
+                        buffer.at(inside_iteration).at(agent_i).action = iterationLogSynthesis[{2+3*agent_i, 0}];
+                        buffer.at(inside_iteration).at(agent_i).prevState = prevprice;
                         totalQuantity += iterationLogSynthesis[{2+3*agent_i, 0}];
                     }
                     break;
             }
             price = inverseDemand(totalQuantity);
             for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
-                iterationBuffer.at(agent_i).profit = computeProfit(price, iterationBuffer.at(agent_i).action);
-                iterationLogSynthesis[{3+3*agent_i, 0}] = iterationBuffer.at(agent_i).profit;
-                iterationLogSynthesis[{4+3*agent_i, 0}] = agents[agent_i].askCritic(iterationBuffer.at(agent_i).prevState, iterationBuffer.at(agent_i).action);
+                buffer.at(inside_iteration).at(agent_i).profit = computeProfit(price, buffer.at(inside_iteration).at(agent_i).action);
+                iterationLogSynthesis[{3+3*agent_i, 0}] = buffer.at(inside_iteration).at(agent_i).profit;
+                iterationLogSynthesis[{4+3*agent_i, 0}] = agents[agent_i]->askCritic(buffer.at(inside_iteration).at(agent_i).prevState, buffer.at(inside_iteration).at(agent_i).action);
             }
             prevprice = price;
             LogManager.addSave(akml::DynamicMatrixSave<float>(2 + agentsNumber * 3, std::move(iterationLogSynthesis)));
-            
-            if (it%2000 == 0)
-                logBufferize = std::thread([](akml::CSV_Saver<akml::DynamicMatrixSave<float>>* saver) { saver->bufferize(); }, &LogManager);
-        
-            buffer.emplace_back(std::move(iterationBuffer));
         }
+        
+        if (iteration%15 == 0)
+            logBufferize = std::thread([](akml::CSV_Saver<akml::DynamicMatrixSave<float>>* saver) { saver->bufferize(); }, &LogManager);
+        
         for (std::size_t inside_iteration(0); inside_iteration < 127; inside_iteration++){
             for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
-                agents[agent_i].feedBack(buffer.at(inside_iteration).at(agent_i).prevState, buffer.at(inside_iteration).at(agent_i).action, buffer.at(inside_iteration).at(agent_i).profit, buffer.at(inside_iteration+1).at(agent_i).prevState, /*inside_iteration == 126*/true, false );
+                agents[agent_i]->feedBack(buffer.at(inside_iteration).at(agent_i).prevState, buffer.at(inside_iteration).at(agent_i).action, buffer.at(inside_iteration).at(agent_i).profit, buffer.at(inside_iteration+1).at(agent_i).prevState, inside_iteration == 126, false );
             }
         }
         for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
-            agentThreads.emplace_back(&LearningAgent::manualTrainingLaunch, &agents[agent_i], mute);
+            agentThreads.emplace_back(&LearningAgent::manualTrainingLaunch, agents[agent_i], mute);
         }
         for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
             if (agentThreads.at(agent_i).joinable())
@@ -113,6 +114,8 @@ void SimulationManager::processSimulation(bool mute) {
         if (logBufferize.joinable())
             logBufferize.join();
         agentThreads.clear();
+        buffer.clear();
+        buffer.resize(128);
     }
     std::string filename = "DDPG-" + getOligopolyName(localSimulationType) + "-" + std::to_string(agentsNumber);
     long int t = static_cast<long int> (std::clock());
@@ -123,4 +126,7 @@ void SimulationManager::processSimulation(bool mute) {
 
     if (logBufferize.joinable())
         logBufferize.join();
+    
+    return curt;
 }
+

@@ -1,5 +1,5 @@
 #data <- read.csv("DDPG-NaiveStackelberg-Output-1977062708.csv")
-data <- read.csv("Outputs/OldOutputs/DDPG-NaiveStackelberg-Output-1552360841.csv")
+data <- read.csv("Outputs/workingonit/DDPG-NaiveCournot-Output-2954903115.csv")
 #data <- read.csv("DDPG-NaiveCournotWithMem-Output-2631691123.csv")
 
 data$round <- as.integer(data$round)

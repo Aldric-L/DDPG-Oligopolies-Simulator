@@ -1,7 +1,7 @@
 #data <- read.csv("DDPG-StrangeCournotWithMem-Output-1562059222.csv")
 #Perfect cournot convergence : 
 #data <- read.csv("DDPG-StrangeCournot-Output-1540358815.csv")
-data <- read.csv("DDPG-StrangeCournot-Output-2083545200.csv")
+data <- read.csv("Outputs/workingonit/DDPG-NaiveCournot-Output-2951601969.csv")
 
 data$round <- as.integer(data$round)
 data$leaderAction <- as.numeric(data$leaderAction)  

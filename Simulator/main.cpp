@@ -5,27 +5,36 @@
 //  /____/____/_/   \___/  \____/_/_/\_, /\___/ .__/\___/_/_/\__/___/
 //                                  /___/    /_/
 //  DDPG Oligopolies Simulator
-//  Created by Aldric Labarthe 2023-2024.
+//  Created by Aldric Labarthe 2023-2024
+//  ENS Paris Saclay
 //
 
 #include <iostream>
 #include <functional>
 #include <thread>
-#include <cstring>
+#include <chrono>
 
 #include "AKML-lib/AKML.hpp"
 #include "AKML-lib/AgentBasedUtilities/CSV_Saver.hpp"
 
 #include "LearningAgent.hpp"
+
 #include "SimulationManager.hpp"
 
 #define MAX_THREADS_USAGE 0.85
 
+#define C 0.2
+#define D 2.2
+#define K 0.98
+#define B 0
+
+
+// Help of the CLI
 void printProgramUsage(const std::string &programName) {
     std::cout << "Usage: " << programName << " [options]" << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << "  -h, --help                  Show this help message and exit\n";
-    std::cout << "  -m, --oligopolyModel=value  Choose the model (COURNOT|STACKELBERG|TEMPORAL_COURNOT) \n";
+    std::cout << "  -o, --oligopolyModel=value  Choose the model (COURNOT|STACKELBERG|TEMPORAL_COURNOT) \n";
     std::cout << "  -N, --maxIterations=value   Set the number of iterations\n";
     std::cout << "  -n, --agentsNb=value        Set the number of agents\n";
     std::cout << "  -S, --simulationsNb=value   Set the number of simulations to process\n";
@@ -33,19 +42,30 @@ void printProgramUsage(const std::string &programName) {
     std::cout << "  -g, --gamma=value           Set the gamma parameter\n";
     std::cout << "  -p, --profitNorm=value      Enable/Disable profit normalization\n";
     std::cout << "  -d, --decayRate=value       Edit the decayRate parameter\n";
+    std::cout << "  -w, --wnDecay=value         Choose the Whitenoise decayMethod (LIN|EXP|SIG|TRUNC_EXP|TRUNC_EXP_RES)\n";
+    std::cout << "  -s, --maxWhiteNoise=value   Edit the maximum std. deviation of the whitenoise process\n";
+    std::cout << "  -a, --actorLR=value         Edit the actor learning rate\n";
+    std::cout << "  -c, --criticLR=value        Edit the critic learning rate\n";
 }
 
+// Options that the user is allowed to edit in CLI
+// DO NOT MODIFY OPTIONS HERE, first, do it in CLI and if you really want to change default, edit the main()
 struct options {
     SimulationManager::OLIGOPOLY_TYPE type = SimulationManager::OLIGOPOLY_TYPE::TEMPORAL_COURNOT;
     std::size_t agentsNb = 2;
     std::size_t maxIteration = 120000;
     std::size_t simulationsNb = 12;
     unsigned int maxThreads = (std::thread::hardware_concurrency()*MAX_THREADS_USAGE > 1) ? std::thread::hardware_concurrency()*MAX_THREADS_USAGE : 1;
-    float gamma = 0.99;
+    float gamma = LearningAgent::gamma;
     bool profitNormalization = true;
-    float decayRate = 0.9998;
+    float decayRate = LearningAgent::decayRate;
+    float learningRateActor = 0.01;
+    float learningRateCritic = 0.1;
+    SimulationManager::WN_DECAY_METHOD wnDecayMethod = SimulationManager::WN_DECAY_METHOD::EXP;
+    float maxWhiteNoise = SimulationManager::maxWhiteNoise;
 };
 
+// CLI Options with parsed values
 void printOptionsValues(const options &localoptions) {
     std::cout << "Options:" << std::endl;
     std::cout << "--oligopolyModel="<< SimulationManager::getOligopolyName(localoptions.type) << "\n";
@@ -56,8 +76,13 @@ void printOptionsValues(const options &localoptions) {
     std::cout << "--gamma=" << localoptions.gamma << "\n";
     std::cout << "--profitNorm=" << localoptions.profitNormalization << "\n";
     std::cout << "--decayRate=" << localoptions.decayRate << "\n";
+    std::cout << "--wnDecay=" << SimulationManager::getWNDecayMethodName(localoptions.wnDecayMethod) << "\n";
+    std::cout << "--actorLR=" << localoptions.learningRateActor << "\n";
+    std::cout << "--criticLR=" << localoptions.learningRateCritic << "\n";
+    std::cout << "--maxWhiteNoise=" << localoptions.maxWhiteNoise << "\n";
 }
 
+// This function is a parser for CLI arguments
 // Returns false if there is an error
 bool handleOptions(int argc, const char * argv[], options& localoptions) {
     std::vector<std::string> args(argv, argv + argc);
@@ -80,7 +105,7 @@ bool handleOptions(int argc, const char * argv[], options& localoptions) {
         
         //std::cout << "Debug: " << option << " " << value << "\n";
         try {
-            if (option == "m" ||option == "oligopolyModel"){
+            if (option == "o" ||option == "oligopolyModel"){
                 if (value == "STACKELBERG" ||value == "Stackelberg" ||value == "S"){
                     localoptions.type = SimulationManager::OLIGOPOLY_TYPE::STACKELBERG;
                 }else if (value == "COURNOT" ||value == "Cournot" ||value == "C"){
@@ -92,6 +117,22 @@ bool handleOptions(int argc, const char * argv[], options& localoptions) {
                     printProgramUsage(args[0]);
                     return false;
                 }
+            }else if (option == "w" ||option == "wnDecay"){
+                if (value == "LIN"){
+                    localoptions.wnDecayMethod = SimulationManager::WN_DECAY_METHOD::LIN;
+                }else if (value == "EXP"){
+                    localoptions.wnDecayMethod = SimulationManager::WN_DECAY_METHOD::EXP;
+                }else if (value == "SIG"){
+                    localoptions.wnDecayMethod = SimulationManager::WN_DECAY_METHOD::SIG;
+                }else if (value == "TRUNC_EXP"){
+                    localoptions.wnDecayMethod = SimulationManager::WN_DECAY_METHOD::TRUNC_EXP;
+                }else if (value == "TRUNC_EXP_RES"){
+                    localoptions.wnDecayMethod = SimulationManager::WN_DECAY_METHOD::TRUNC_EXP_RES;
+                }else {
+                    std::cerr << "Alert! Unable to parse whitenoise decay method.\n";
+                    printProgramUsage(args[0]);
+                    return false;
+                }
             }else if (option == "N" ||option == "maxIterations"){
                 localoptions.maxIteration = (std::size_t)std::stoi(value);
             }else if (option == "n" ||option == "agentsNb"){
@@ -100,7 +141,7 @@ bool handleOptions(int argc, const char * argv[], options& localoptions) {
                 localoptions.simulationsNb = (std::size_t)std::stoi(value);
             }else if (option == "T" ||option == "maxThreads"){
                 localoptions.maxThreads = (unsigned int)std::stoi(value);
-                if (std::thread::hardware_concurrency()*MAX_THREADS_USAGE < localoptions.maxThreads){
+                if (std::thread::hardware_concurrency() > 1 && std::thread::hardware_concurrency()*MAX_THREADS_USAGE < localoptions.maxThreads){
                     std::cerr << "Too many threads requested, maxThreads set to " << std::thread::hardware_concurrency()*MAX_THREADS_USAGE << "\n";
                     localoptions.maxThreads = std::thread::hardware_concurrency()*MAX_THREADS_USAGE;
                 }
@@ -110,6 +151,12 @@ bool handleOptions(int argc, const char * argv[], options& localoptions) {
                 localoptions.profitNormalization = (value == "true" || value == "T" || value == "1" ||value == "True" || value == "TRUE");
             }else if (option == "d" ||option == "decayRate"){
                 localoptions.decayRate = std::stof(value);
+            }else if (option == "a" ||option == "actorLR"){
+                localoptions.learningRateActor = std::stof(value);
+            }else if (option == "c" ||option == "criticLR"){
+                localoptions.learningRateCritic = std::stof(value);
+            }else if (option == "s" ||option == "maxWhiteNoise"){
+                localoptions.maxWhiteNoise = std::stof(value);
             }else {
                 printProgramUsage(args[0]);
                 return false;
@@ -127,16 +174,20 @@ bool handleOptions(int argc, const char * argv[], options& localoptions) {
     return true;
 }
 
-
 int main(int argc, const char * argv[]) {
     std::cout << "DDPG-Oligopolies-Simulator v0.1 - Welcome!\n";
     options localoptions = {
       // If we want to force default values:
-        .type=SimulationManager::STACKELBERG,
-        .simulationsNb = 2,
+        .type=SimulationManager::COURNOT,
+        .maxIteration = 60000,
+        .simulationsNb = 4,
         .gamma = 0.f,
         .profitNormalization = false,
-        .decayRate = 1.f // or 0.9999
+        //.decayRate = 1.f, // or 0.9999
+        .wnDecayMethod = SimulationManager::WN_DECAY_METHOD::LIN,
+        .learningRateActor= 0.01,
+        .learningRateCritic= 0.1,
+        .maxWhiteNoise = 0.06
     };
     
     if (!handleOptions(argc, argv, localoptions))
@@ -144,36 +195,60 @@ int main(int argc, const char * argv[]) {
     printOptionsValues(localoptions); std::cout << std::endl;
     
     unsigned int maxThreads = std::max((unsigned int)(localoptions.maxThreads/localoptions.agentsNb), (unsigned int)1);
-    std::vector<SimulationManager> managers;
+    std::vector<SimulationManager*> managers;
     std::vector<std::thread> workers;
     
     // Input renormalization, in temporal Cournot, the price is the input, needing a higher scaling factor
     SimulationManager::A = (localoptions.type == SimulationManager::TEMPORAL_COURNOT) ? 0.45 : 1;
+    SimulationManager::maxWhiteNoise = localoptions.maxWhiteNoise;
     
     managers.reserve(maxThreads); workers.reserve(maxThreads);
     for (std::size_t s(0); s < localoptions.simulationsNb;){
         for (unsigned int conc_s(0); s+conc_s < std::min(localoptions.simulationsNb, s+maxThreads); conc_s++){
             std::cout << "Initialization of simulation " << s+conc_s+1 << " / " << localoptions.simulationsNb << "\n";
-            managers.emplace_back(localoptions.type, localoptions.agentsNb, localoptions.maxIteration);
-            managers.back().setGamma(localoptions.gamma);
-            managers.back().setDecayrate(localoptions.decayRate);
-            managers.back().setWNMethod(&SimulationManager::LINDECAYED_WHITENOISE);
+            managers.push_back(new SimulationManager(localoptions.type, localoptions.agentsNb, localoptions.maxIteration));
+            managers.back()->setGamma(localoptions.gamma);
+            managers.back()->setDecayrate(localoptions.decayRate);
+            switch (localoptions.wnDecayMethod) {
+                case SimulationManager::LIN: managers.back()->setWNMethod(&SimulationManager::LINDECAYED_WHITENOISE); break;
+                case SimulationManager::EXP: managers.back()->setWNMethod(&SimulationManager::EXPDECAYED_WHITENOISE); break;
+                case SimulationManager::SIG: managers.back()->setWNMethod(&SimulationManager::SIGDECAYED_WHITENOISE); break;
+                case SimulationManager::TRUNC_EXP: managers.back()->setWNMethod(&SimulationManager::TRUNCEXPDECAYED_WHITENOISE); break;
+                case SimulationManager::TRUNC_EXP_RES: managers.back()->setWNMethod(&SimulationManager::TRUNCRESEXPDECAYED_WHITENOISE); break;
+            }
+            managers.back()->setLearningRates(localoptions.learningRateActor, localoptions.learningRateCritic);
             if (!localoptions.profitNormalization)
-                managers.back().disableProfitRenormalization();
+                managers.back()->disableProfitRenormalization();
         }
         
         for (unsigned int conc_s(0); conc_s < managers.size(); conc_s++){
             std::cout << "Processing simulation " << s+conc_s+1 << " / " << localoptions.simulationsNb << "\n";
-            workers.emplace_back(&SimulationManager::processSimulation, managers[conc_s], maxThreads>1&&localoptions.simulationsNb>1);
+            //workers.emplace_back(&SimulationManager::processSimulation, managers[conc_s], maxThreads>1&&localoptions.simulationsNb>1);
+            workers.emplace_back([localoptions](SimulationManager* simul, bool mute, unsigned int simulId) {
+                auto start = std::chrono::high_resolution_clock::now();
+                std::string output = simul->processSimulation(mute);
+                auto end = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> duration = end - start;
+                
+                std::ofstream cout(std::string("DDPG-SimulInfos-" + output +".txt"));
+                std::ios_base::sync_with_stdio(false);
+                auto *coutbuf = std::cout.rdbuf();
+                std::cout.rdbuf(cout.rdbuf());
+                printOptionsValues(localoptions);
+                std::cout << "--executionTime=" << duration.count() << "\n";
+                std::cout.rdbuf(coutbuf);
+                std::cout << "End of simulation " << simulId+1 << " - Log file: " << "DDPG-" << SimulationManager::getOligopolyName(localoptions.type) << "-" << std::to_string(localoptions.agentsNb) << "-" << output << ".csv" << "\n";
+            }, managers[conc_s], maxThreads>1&&localoptions.simulationsNb>1, s+conc_s);
+            
         }
         for (unsigned int conc_s(0); conc_s < managers.size(); conc_s++){
             if (workers[conc_s].joinable())
                 workers[conc_s].join();
+            delete managers[conc_s];
         }
         s += managers.size();
         workers.clear(); managers.clear();
         
     }
-    
     return 0;
 }
