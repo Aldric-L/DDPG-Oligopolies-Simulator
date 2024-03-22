@@ -1,0 +1,14 @@
+Options:
+--oligopolyModel=Cournot
+--maxIterations=60000
+--agentsNb=2
+--simulationsNb=8
+--maxThreads=8
+--gamma=0
+--profitNorm=0
+--decayRate=0.9998
+--wnDecay=LIN
+--actorLR=0.01
+--criticLR=0.1
+--maxWhiteNoise=0.3
+--executionTime=1382.71

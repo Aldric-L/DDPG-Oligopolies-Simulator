@@ -23,12 +23,6 @@
 
 #define MAX_THREADS_USAGE 0.85
 
-#define C 0.2
-#define D 2.2
-#define K 0.98
-#define B 0
-
-
 // Help of the CLI
 void printProgramUsage(const std::string &programName) {
     std::cout << "Usage: " << programName << " [options]" << std::endl;
@@ -46,6 +40,8 @@ void printProgramUsage(const std::string &programName) {
     std::cout << "  -s, --maxWhiteNoise=value   Edit the maximum std. deviation of the whitenoise process\n";
     std::cout << "  -a, --actorLR=value         Edit the actor learning rate\n";
     std::cout << "  -c, --criticLR=value        Edit the critic learning rate\n";
+    std::cout << "  -C, --modC=value            Edit the marginal cost of the model\n";
+    std::cout << "  -D, --modD=value            Edit the demand hyperparameter of the model\n";
 }
 
 // Options that the user is allowed to edit in CLI
@@ -63,6 +59,8 @@ struct options {
     float learningRateCritic = 0.1;
     SimulationManager::WN_DECAY_METHOD wnDecayMethod = SimulationManager::WN_DECAY_METHOD::EXP;
     float maxWhiteNoise = SimulationManager::maxWhiteNoise;
+    float modC = SimulationManager::C;
+    float modD = SimulationManager::D;
 };
 
 // CLI Options with parsed values
@@ -80,6 +78,8 @@ void printOptionsValues(const options &localoptions) {
     std::cout << "--actorLR=" << localoptions.learningRateActor << "\n";
     std::cout << "--criticLR=" << localoptions.learningRateCritic << "\n";
     std::cout << "--maxWhiteNoise=" << localoptions.maxWhiteNoise << "\n";
+    std::cout << "--modC=" << localoptions.modC << "\n";
+    std::cout << "--modD=" << localoptions.modD << "\n";
 }
 
 // This function is a parser for CLI arguments
@@ -157,6 +157,10 @@ bool handleOptions(int argc, const char * argv[], options& localoptions) {
                 localoptions.learningRateCritic = std::stof(value);
             }else if (option == "s" ||option == "maxWhiteNoise"){
                 localoptions.maxWhiteNoise = std::stof(value);
+            }else if (option == "C" ||option == "modC"){
+                localoptions.modC = std::stof(value);
+            }else if (option == "D" ||option == "modD"){
+                localoptions.modD = std::stof(value);
             }else {
                 printProgramUsage(args[0]);
                 return false;
@@ -200,6 +204,8 @@ int main(int argc, const char * argv[]) {
     
     // Input renormalization, in temporal Cournot, the price is the input, needing a higher scaling factor
     SimulationManager::A = (localoptions.type == SimulationManager::TEMPORAL_COURNOT) ? 0.45 : 1;
+    SimulationManager::C = localoptions.modC;
+    SimulationManager::D = localoptions.modD;
     SimulationManager::maxWhiteNoise = localoptions.maxWhiteNoise;
     
     managers.reserve(maxThreads); workers.reserve(maxThreads);

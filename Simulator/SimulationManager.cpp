@@ -33,11 +33,12 @@ std::string SimulationManager::processSimulation(bool mute) {
             iterationLogSynthesis[{1, 0}] = whitenoise;
             
             float totalQuantity = 0.f;
-            float leadersQuantity = 0.f;
             float price = 0.f;
             
             switch (localSimulationType) {
                 case STACKELBERG:
+                {
+                    float leadersQuantity = 0.f;
                     // First we process all leaders with qty input of 0
                     for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
                         // If agent_i is not leader... we skip
@@ -59,22 +60,25 @@ std::string SimulationManager::processSimulation(bool mute) {
                         totalQuantity += buffer.at(inside_iteration).at(agent_i).action;
                     }
                     break;
+                }
                     
                 case COURNOT:
+                {
+                    float totalPreviousActions = 0.f;
+                    if (inside_iteration >0){
+                        for (std::size_t ai(0); ai < agentsNumber; ai++)
+                            totalPreviousActions += buffer.at(inside_iteration-1).at(ai).action;
+                    }
                     for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
-                        float totalOtherActions = 0.f;
-                        if (buffer.size() >0){
-                            for (std::size_t ai(0); ai < agentsNumber; ai++){
-                                if (ai != agent_i)
-                                    totalOtherActions += buffer.front().at(ai).action;
-                            }
-                        }
-                        buffer.at(inside_iteration).at(agent_i).prevState = totalOtherActions;
-                        buffer.at(inside_iteration).at(agent_i).action = agents[agent_i]->play(totalOtherActions, whitenoise);
+                        buffer.at(inside_iteration).at(agent_i).prevState = totalPreviousActions;
+                        if (inside_iteration >0)
+                            buffer.at(inside_iteration).at(agent_i).prevState -= buffer.at(inside_iteration-1).at(agent_i).action;
+                        buffer.at(inside_iteration).at(agent_i).action = agents[agent_i]->play(buffer.at(inside_iteration).at(agent_i).prevState, whitenoise);
                         iterationLogSynthesis[{2+3*agent_i, 0}] = buffer.at(inside_iteration).at(agent_i).action;
                         totalQuantity += buffer.at(inside_iteration).at(agent_i).action;
                     }
                     break;
+                }
                     
                 case TEMPORAL_COURNOT:
                     for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
