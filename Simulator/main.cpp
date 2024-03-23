@@ -188,9 +188,9 @@ int main(int argc, const char * argv[]) {
         .gamma = 0.f,
         .profitNormalization = false,
         //.decayRate = 1.f, // or 0.9999
-        .wnDecayMethod = SimulationManager::WN_DECAY_METHOD::LIN,
         .learningRateActor= 0.01,
         .learningRateCritic= 0.1,
+        .wnDecayMethod = SimulationManager::WN_DECAY_METHOD::LIN,
         .maxWhiteNoise = 0.06
     };
     
