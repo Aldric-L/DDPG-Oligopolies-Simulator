@@ -136,6 +136,7 @@ public:
     }
     
     std::string processSimulation(bool mute=false);
+    void saveCritics(std::string curt="");
 };
 
 #endif /* SimulationManager_hpp */

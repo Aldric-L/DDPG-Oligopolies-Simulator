@@ -2,14 +2,27 @@
 # usethis::edit_r_environ(scope="project")
 # R_MAX_VSIZE=100Gb 
 
-agents_nb <- 2
-#folder_path <- "Outputs/Cournot-2-TRUNCRESEXPDECAYED_WHITENOISE-120000-Gamma0-HDecay/"
-folder_path <- "Outputs/Cournot-2-120k-LIN-Gamma0.99/"
+agents_nb <- 4
+#folder_path <- "Outputs/Cournot-2-60k-LIN-Gamma0/WN0.15/"
+#folder_path <- "Outputs/Cournot-2-120k-LIN-Gamma0.99/WN0.15/"
+folder_path <- "Outputs/Cournot-4-100k-LIN-Gamma0/"
+cournot4 <- c("compProfit" = 0, "compQuantity" = 0.423,
+              "cournotProfit" = 0.403, "cournotQuantity" = 0.355,
+              "cartelProfit" = 0.526, "cartelQuantity" = 0.239,
+              "modelTotalProfit" = 1.612,
+              "modelTotalQuantity" = 1.419,
+              "reactionFunction" = function(Q) {
+                return((2.2-Q)/(2*(1+0.2)))
+              })
+
 cournot2 <- c("compProfit" = 0.16469444444444442, "compQuantity" = 0.9166666666666667,
               "cournotProfit" = 0.49237370242214545, "cournotQuantity" = 0.6470588235294118,
               "cartelProfit" = 0.539, "cartelQuantity" = 0.5,
               "modelTotalProfit" = 2 * 0.49237370242214545,
-              "modelTotalQuantity" = 2 * 0.6470588235294118)
+              "modelTotalQuantity" = 2 * 0.6470588235294118,
+              "reactionFunction" = function(Q) {
+                return((2.2-Q)/(2*(1+0.2)))
+              })
 
 stackelberg2bis <- c(
               "compProfit" = 0.111, "compQuantity" = 0.870,
@@ -18,7 +31,10 @@ stackelberg2bis <- c(
               "cartelProfit" = 0.456, "cartelQuantity" = 0.465,
               "cournotProfit" = 0.414, "cournotQuantity" = 0.606,
               "modelTotalProfit" = 0.306+0.438, 
-              "modelTotalQuantity" = 0.521 + 0.801)
+              "modelTotalQuantity" = 0.521 + 0.801,
+              "reactionFunction" = function(Q) {
+                return((2.2-Q)/(2*(1+0.2)))
+              })
 
 stackelberg2 <- c(
   "compProfit" = 0.16469444444444442, "compQuantity" = 0.9166666666666667,
@@ -26,13 +42,16 @@ stackelberg2 <- c(
   "highProfit" = 0.5148647211720228, "highQuantity" = 0.8369565217391304,
   "cartelProfit" = 0.539, "cartelQuantity" = 0.5,
   "modelTotalProfit" = 0.37931870274102086+0.5148647211720228, 
-  "modelTotalQuantity" = 0.5679347826086958 + 0.8369565217391304)
+  "modelTotalQuantity" = 0.5679347826086958 + 0.8369565217391304,
+  "reactionFunction" = function(Q) {
+    return((2.2-Q)/(2*(1+0.2)))
+  })
 
 #cournot4 <- c("profit" = , "cournotQuantity" = , "compQuantity" = )
 
-lightmode <- FALSE
+lightmode <- TRUE
 
-mode <- cournot2
+mode <- cournot4
 model <- "COURNOT"
 
 ## Import files
@@ -63,6 +82,9 @@ for (i in 1:length(csv_files)) {
     data[, paste("agent", agent, "CriticError", sep="")] <- (data[, paste("agent", agent, "EstimatedProfit", sep="")] - data[, paste("agent", agent, "Profit", sep="")])/temp
     rm(temp)
     data$criticError <- data$criticError + data[, paste("agent", agent, "CriticError", sep="")] 
+  }
+  for (agent in 1:agents_nb){
+    data[, paste("agent", agent, "ActionError", sep="")] <- mode[["reactionFunction"]](data$totalQuantity-data[, paste("agent", agent, "Action", sep="")])-data[, paste("agent", agent, "Action", sep="")]
   }
   data$criticError <- data$criticError / agents_nb
   assign(paste("sim_", toString(last_number), sep=""), data)
@@ -148,6 +170,15 @@ ggplot(simulsData[simulsData$whitenoise==0&simulsData$round>40000,], aes(x=round
   theme_minimal() + 
   labs(x = "Round", y = "Critic estimation error", color = "Legend")
 
+## Action Error
+ggplot(simulsData[simulsData$whitenoise==0,], aes(x=round, group=simulName, color=simulName)) +
+  geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent1ActionError, color = "Simulations")) +
+  {if (agents_nb>=2)geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent2ActionError, color = "Simulations")) } + 
+  {if (agents_nb>=3)geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent3ActionError, color = "Simulations")) } + 
+  {if (agents_nb>=4)geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent4ActionError, color = "Simulations")) } + 
+  theme_minimal() + 
+  labs(x = "Round", y = "Deviation from (static) best response function", color = "Legend")
+
 ## One simul plot
 s <- get(simuls[[4]])
 ggplot(s[s$whitenoise==0,], aes(x = round)) +
@@ -155,8 +186,12 @@ ggplot(s[s$whitenoise==0,], aes(x = round)) +
   geom_point(aes(y = agent1Action, color = "agent1"), alpha = 0.1) +
   geom_smooth(aes(y = agent1Action, color = "agent1Trend"), se = FALSE) +
   geom_smooth(aes(y = agent2Action, color = "agent2Trend"), se = FALSE) +
+  {if (agents_nb>=3)geom_point(aes(y = agent3Action, color = "agent3"), alpha = 0.1) } + 
+  {if (agents_nb>=3)geom_smooth(aes(y = agent3Action, color = "agent3Trend"), se = FALSE) } + 
+  {if (agents_nb>=4)geom_point(aes(y = agent4Action, color = "agent4"), alpha = 0.1) } + 
+  {if (agents_nb>=4)geom_smooth(aes(y = agent4Action, color = "agent4Trend"), se = FALSE) } +
   {if (model == "COURNOT")geom_line(aes(y = mode[["cournotQuantity"]], color = "Cournot")) } + 
-  {if (model == "COURNOT")geom_smooth(aes(y = (agent1Action+agent2Action)/2, color = "meanTrend"), se = FALSE) } + 
+  {if (model == "COURNOT")geom_smooth(aes(y = (totalQuantity)/agents_nb, color = "meanTrend"), se = FALSE) } + 
   {if (model == "STACKELBERG")geom_line(aes(y = mode[["lowQuantity"]])) } +
   {if (model == "STACKELBERG")geom_line(aes(y = mode[["highQuantity"]]))} + 
   {if (model == "STACKELBERG")geom_smooth(aes(y = (2.2-agent1Action)/(2*(1+0.2)), color = "agent3Trend"), se = FALSE)} + 
@@ -256,6 +291,7 @@ followerActions <- c()
 leaderActions <- c()
 meanMaxDists <- c()
 sdMaxDists <- c()
+actionsDivergence <- c()
 
 for (i in 1:length(simuls)) {
   s <- get(simuls[[i]])
@@ -267,6 +303,9 @@ for (i in 1:length(simuls)) {
   a2 <- convergence_test(s$agent2Action, 0.98)$mean
   followerActions <- append(followerActions, min(a1, a2))
   leaderActions <- append(leaderActions, max(a1, a2))
+  for (agent in 2:agents_nb){
+    actionsDivergence <- append(actionsDivergence, convergence_test(s[, paste("agent", agent, "ActionError", sep="")], 0.98)$mean)
+  }
   rm(s)
 }
 tmp <- data.frame(totalActions = convergenceTotalActions, followerActions, leaderActions)
@@ -304,9 +343,9 @@ ggplot(tmp) +
        y = "Density", color = "Legend")
 
 ggplot(tmp) +
-  geom_density(aes(x = leaderActions+followerActions), alpha = 0.5, fill = "orange") +
+  geom_density(aes(x = convergenceTotalActions), alpha = 0.5, fill = "orange") +
   stat_function(fun = dnorm, n = 101, args = list(mean = mean(tmp$totalActions), sd = sd(tmp$totalActions))) + 
-  geom_vline(xintercept=median(leaderActions+followerActions), color="red") + 
+  geom_vline(xintercept=median(convergenceTotalActions), color="red") + 
   geom_vline(xintercept=mode[["modelTotalQuantity"]])  + 
   geom_vline(xintercept=mode[["modelTotalQuantity"]]*0.95, color="blue", linetype="dotted") + 
   geom_vline(xintercept=mode[["modelTotalQuantity"]]*1.05, color="blue", linetype="dotted") + 
@@ -315,6 +354,14 @@ ggplot(tmp) +
   labs(x = "Selected quantity",
        y = "Density", color = "Legend")
 
+ggplot() +
+  geom_density(aes(x = actionsDivergence), alpha = 0.5, fill = "orange") +
+  stat_function(fun = dnorm, n = 101, args = list(mean = mean(actionsDivergence), sd = sd(actionsDivergence))) + 
+  labs(x = "Average asymptotic diff. with static best response",
+       y = "Density", color = "Legend")
+
+summary(actionsDivergence)
+shapiro.test(actionsDivergence)
 
 # Share of correct values in the CI interval of modelQuantity +/- 5%
 CI5share <- nrow(tmp[tmp$totalActions>=mode[["modelTotalQuantity"]]*0.95&tmp$totalActions<=mode[["modelTotalQuantity"]]*1.05,])/nrow(tmp)

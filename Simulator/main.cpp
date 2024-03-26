@@ -42,6 +42,7 @@ void printProgramUsage(const std::string &programName) {
     std::cout << "  -c, --criticLR=value        Edit the critic learning rate\n";
     std::cout << "  -C, --modC=value            Edit the marginal cost of the model\n";
     std::cout << "  -D, --modD=value            Edit the demand hyperparameter of the model\n";
+    std::cout << "  -E, --exportCritics         Should we dump critics of agents at the end of simulation ?\n";
 }
 
 // Options that the user is allowed to edit in CLI
@@ -61,6 +62,7 @@ struct options {
     float maxWhiteNoise = SimulationManager::maxWhiteNoise;
     float modC = SimulationManager::C;
     float modD = SimulationManager::D;
+    bool exportCritics = true;
 };
 
 // CLI Options with parsed values
@@ -80,6 +82,7 @@ void printOptionsValues(const options &localoptions) {
     std::cout << "--maxWhiteNoise=" << localoptions.maxWhiteNoise << "\n";
     std::cout << "--modC=" << localoptions.modC << "\n";
     std::cout << "--modD=" << localoptions.modD << "\n";
+    std::cout << "--exportCritics=" << localoptions.exportCritics << "\n";
 }
 
 // This function is a parser for CLI arguments
@@ -161,6 +164,8 @@ bool handleOptions(int argc, const char * argv[], options& localoptions) {
                 localoptions.modC = std::stof(value);
             }else if (option == "D" ||option == "modD"){
                 localoptions.modD = std::stof(value);
+            }else if (option == "E" ||option == "exportCritics"){
+                localoptions.exportCritics = (value == "true" || value == "T" || value == "1" ||value == "True" || value == "TRUE");
             }else {
                 printProgramUsage(args[0]);
                 return false;
@@ -233,6 +238,10 @@ int main(int argc, const char * argv[]) {
             workers.emplace_back([localoptions](SimulationManager* simul, bool mute, unsigned int simulId) {
                 auto start = std::chrono::high_resolution_clock::now();
                 std::string output = simul->processSimulation(mute);
+                if (localoptions.exportCritics){
+                    std::cout << "Critics dump of simulation " << simulId+1 << " - Log file: " << "DDPG-Critics-" << output << ".csv" << "\n";
+                    simul->saveCritics(output);
+                }
                 auto end = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> duration = end - start;
                 

@@ -73,6 +73,7 @@ std::string SimulationManager::processSimulation(bool mute) {
                         buffer.at(inside_iteration).at(agent_i).prevState = totalPreviousActions;
                         if (inside_iteration >0)
                             buffer.at(inside_iteration).at(agent_i).prevState -= buffer.at(inside_iteration-1).at(agent_i).action;
+                        buffer.at(inside_iteration).at(agent_i).prevState = buffer.at(inside_iteration).at(agent_i).prevState/(float)(agentsNumber-1);
                         buffer.at(inside_iteration).at(agent_i).action = agents[agent_i]->play(buffer.at(inside_iteration).at(agent_i).prevState, whitenoise);
                         iterationLogSynthesis[{2+3*agent_i, 0}] = buffer.at(inside_iteration).at(agent_i).action;
                         totalQuantity += buffer.at(inside_iteration).at(agent_i).action;
@@ -134,3 +135,37 @@ std::string SimulationManager::processSimulation(bool mute) {
     return curt;
 }
 
+void SimulationManager::saveCritics(std::string curt){
+    akml::CSV_Saver<akml::DynamicMatrixSave<float>> CriticLogManager;
+    
+    std::vector<std::string> parametersName;
+    parametersName.reserve(3 + agentsNumber);
+    parametersName.push_back("prevState");
+    parametersName.push_back("action");
+    parametersName.push_back("price");
+    parametersName.push_back("agentProfit");
+    for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
+        parametersName.push_back("agent" + std::to_string(agent_i+1) + "EstimatedProfit");
+    }
+    
+    akml::DynamicMatrixSave<float>::default_parameters_name = parametersName;
+    CriticLogManager.reserve(100*100);
+    
+    for (float randomA(0); randomA < 1; randomA += 0.01){
+        for (float ourA(0); ourA < 1; ourA += 0.01){
+            akml::DynamicMatrix<float> cursave(4+agentsNumber, 1);
+            cursave[{0,0}] = randomA;
+            cursave[{1,0}] = ourA;
+            float price = inverseDemand((agentsNumber-1)*randomA+ourA);
+            cursave[{2,0}] = price;
+            cursave[{3, 0}] = computeProfit(price, ourA);
+                
+            for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
+                cursave[{4+agent_i, 0}] = agents.at(agent_i)->askCritic(randomA, ourA);
+            }
+                
+            CriticLogManager.addSave(akml::DynamicMatrixSave<float>(3+agentsNumber*2, std::move(cursave)));
+        }
+    }
+    CriticLogManager.saveToCSV("DDPG-Critics-" + curt + ".csv", false);
+}
