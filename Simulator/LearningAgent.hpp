@@ -34,6 +34,7 @@ public:
     
     
 protected:
+    std::mt19937 gen;
     std::string name;
     unsigned short int accumulatedExperiences;
     akml::NeuralNetwork QNet, target_QNet, policyNet, target_policyNet;
@@ -49,15 +50,13 @@ protected:
     void train(bool mute=false);
     
 public:
-    LearningAgent(std::string name="") : QNet(4), policyNet(4), accumulatedExperiences(0), target_QNet(4), target_policyNet(4), name(std::move(name)) {
+    LearningAgent(std::string name="") : QNet(4), policyNet(4), accumulatedExperiences(0), target_QNet(4), target_policyNet(4), name(std::move(name)), gen(std::random_device{}()) {
         QNet.construct(QNetInitList); policyNet.construct(PolicyNetInitList);
         target_QNet = QNet; target_policyNet = policyNet;
     }
     
     inline float play(float state, float white_noise=0.f) {
         if (white_noise != 0){
-            std::random_device rd;
-            std::mt19937 gen(rd());
             std::normal_distribution<float> distribution(0,white_noise);
             return std::max((float) std::min((float) policyNet.process(akml::make_dynamic_vector<float>(state)).read(1, 1) + (float)distribution(gen), 1.f), 0.f);
         }
@@ -88,9 +87,12 @@ public:
         this->train(mute);
     }
     
-    // Debug functions
     float askCritic(float state, float action){
         return QNet.process(akml::make_dynamic_vector<float>(state, action)).read(1,1);
+    }
+    
+    float askActor(float state){
+        return policyNet.process(akml::make_dynamic_vector<float>(state)).read(1,1);
     }
     
 };

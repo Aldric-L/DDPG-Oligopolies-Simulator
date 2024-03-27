@@ -196,7 +196,6 @@ int main(int argc, const char * argv[]) {
         .learningRateActor= 0.01,
         .learningRateCritic= 0.1,
         .wnDecayMethod = SimulationManager::WN_DECAY_METHOD::LIN,
-        .maxWhiteNoise = 0.06
     };
     
     if (!handleOptions(argc, argv, localoptions))
@@ -234,7 +233,6 @@ int main(int argc, const char * argv[]) {
         
         for (unsigned int conc_s(0); conc_s < managers.size(); conc_s++){
             std::cout << "Processing simulation " << s+conc_s+1 << " / " << localoptions.simulationsNb << "\n";
-            //workers.emplace_back(&SimulationManager::processSimulation, managers[conc_s], maxThreads>1&&localoptions.simulationsNb>1);
             workers.emplace_back([localoptions](SimulationManager* simul, bool mute, unsigned int simulId) {
                 auto start = std::chrono::high_resolution_clock::now();
                 std::string output = simul->processSimulation(mute);
