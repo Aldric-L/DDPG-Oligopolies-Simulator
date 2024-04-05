@@ -21,10 +21,13 @@ public:
         replay(float prevState, float agentAction, float reward, float nextState, bool isTerminated) : prevState(prevState), agentAction(agentAction), reward(reward), nextState(nextState), isTerminated(isTerminated) {}; };
     static inline bool renormReward = true;
     static inline unsigned short int preLearningExpriences = 126;
-    static inline std::size_t maxBufferSize = 2000;
-    static inline std::size_t maxEpochsAtLearningTime = 25;
+    //static inline std::size_t maxBufferSize = 2000;
+    static inline std::size_t maxBufferSize = 500;
+    static inline std::size_t maxEpochsAtLearningTime = 40;
+    //static inline std::size_t maxEpochsAtLearningTime = 25;
     static inline float gradientTolerance = 1e-07;
-    static inline std::size_t batchSize = 64;
+    //static inline std::size_t batchSize = 64;
+    static inline std::size_t batchSize = 32;
     static inline std::size_t batchNumber = 32;
     static inline float gamma = 0.1;
     static inline float polyakCoef = 0.95;
@@ -45,7 +48,7 @@ protected:
     
     const akml::NeuralNetwork::initialize_list_type QNetInitList = {{ { 2, nullptr }, { 8, &akml::ActivationFunctions::RELU }, { 8, &akml::ActivationFunctions::RELU }, { 1, &akml::ActivationFunctions::SIGMOID } }};
     
-    const akml::NeuralNetwork::initialize_list_type PolicyNetInitList = {{ { 1, nullptr }, { 8, &akml::ActivationFunctions::RELU }, { 8, &akml::ActivationFunctions::RELU }, { 1, &akml::ActivationFunctions::SIGMOID } }};
+    const akml::NeuralNetwork::initialize_list_type PolicyNetInitList = {{ { 1, nullptr }, { 4, &akml::ActivationFunctions::RELU }, { 4, &akml::ActivationFunctions::RELU }, { 1, &akml::ActivationFunctions::SIGMOID } }};
     
     void train(bool mute=false);
     
@@ -82,8 +85,7 @@ public:
     }
     
     void manualTrainingLaunch(bool mute=false){
-        if (accumulatedExperiences >= preLearningExpriences)
-            accumulatedExperiences = 0;
+        accumulatedExperiences = 0;
         this->train(mute);
     }
     

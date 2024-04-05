@@ -34,7 +34,10 @@ void printProgramUsage(const std::string &programName) {
     std::cout << "  -S, --simulationsNb=value   Set the number of simulations to process\n";
     std::cout << "  -T, --maxThreads=value      Set the number of simulations to process in parallel\n";
     std::cout << "  -g, --gamma=value           Set the gamma parameter\n";
+    std::cout << "  -m, --maxBufferSize=value   Set the size of the memory buffer\n";
     std::cout << "  -p, --profitNorm=value      Enable/Disable profit normalization\n";
+    std::cout << "  -f, --profitFactor=value    Reward scaling factor\n";
+    std::cout << "  -F, --profitScale=value     Reward scaling constant\n";
     std::cout << "  -d, --decayRate=value       Edit the decayRate parameter\n";
     std::cout << "  -w, --wnDecay=value         Choose the Whitenoise decayMethod (LIN|EXP|SIG|TRUNC_EXP|TRUNC_EXP_RES)\n";
     std::cout << "  -s, --maxWhiteNoise=value   Edit the maximum std. deviation of the whitenoise process\n";
@@ -62,6 +65,9 @@ struct options {
     float maxWhiteNoise = SimulationManager::maxWhiteNoise;
     float modC = SimulationManager::C;
     float modD = SimulationManager::D;
+    float profitFactor = SimulationManager::K;
+    float profitScale = SimulationManager::B;
+    std::size_t maxBufferSize = LearningAgent::maxBufferSize;
     bool exportCritics = true;
 };
 
@@ -74,7 +80,10 @@ void printOptionsValues(const options &localoptions) {
     std::cout << "--simulationsNb=" << localoptions.simulationsNb << "\n";
     std::cout << "--maxThreads=" << localoptions.maxThreads << "\n";
     std::cout << "--gamma=" << localoptions.gamma << "\n";
+    std::cout << "--maxBufferSize=" << localoptions.maxBufferSize << "\n";
     std::cout << "--profitNorm=" << localoptions.profitNormalization << "\n";
+    std::cout << "--profitFactor=" << localoptions.profitFactor << "\n";
+    std::cout << "--profitScale=" << localoptions.profitScale << "\n";
     std::cout << "--decayRate=" << localoptions.decayRate << "\n";
     std::cout << "--wnDecay=" << SimulationManager::getWNDecayMethodName(localoptions.wnDecayMethod) << "\n";
     std::cout << "--actorLR=" << localoptions.learningRateActor << "\n";
@@ -138,6 +147,8 @@ bool handleOptions(int argc, const char * argv[], options& localoptions) {
                 }
             }else if (option == "N" ||option == "maxIterations"){
                 localoptions.maxIteration = (std::size_t)std::stoi(value);
+            }else if (option == "m" ||option == "maxBufferSize"){
+                localoptions.maxBufferSize = (std::size_t)std::stoi(value);
             }else if (option == "n" ||option == "agentsNb"){
                 localoptions.agentsNb = (std::size_t)std::stoi(value);
             }else if (option == "S" ||option == "simulationsNb"){
@@ -164,6 +175,10 @@ bool handleOptions(int argc, const char * argv[], options& localoptions) {
                 localoptions.modC = std::stof(value);
             }else if (option == "D" ||option == "modD"){
                 localoptions.modD = std::stof(value);
+            }else if (option == "f" ||option == "profitFactor"){
+                localoptions.profitFactor = std::stof(value);
+            }else if (option == "F" ||option == "profitScale"){
+                localoptions.profitScale = std::stof(value);
             }else if (option == "E" ||option == "exportCritics"){
                 localoptions.exportCritics = (value == "true" || value == "T" || value == "1" ||value == "True" || value == "TRUE");
             }else {
@@ -193,8 +208,8 @@ int main(int argc, const char * argv[]) {
         .gamma = 0.f,
         .profitNormalization = false,
         //.decayRate = 1.f, // or 0.9999
-        .learningRateActor= 0.01,
-        .learningRateCritic= 0.1,
+        //.learningRateActor= 0.01,
+        //.learningRateCritic= 0.1,
         .wnDecayMethod = SimulationManager::WN_DECAY_METHOD::LIN,
     };
     
@@ -210,7 +225,10 @@ int main(int argc, const char * argv[]) {
     SimulationManager::A = (localoptions.type == SimulationManager::TEMPORAL_COURNOT) ? 0.45 : 1;
     SimulationManager::C = localoptions.modC;
     SimulationManager::D = localoptions.modD;
+    SimulationManager::K = localoptions.profitFactor;
+    SimulationManager::B = localoptions.profitScale;
     SimulationManager::maxWhiteNoise = localoptions.maxWhiteNoise;
+    LearningAgent::maxBufferSize = localoptions.maxBufferSize;
     
     managers.reserve(maxThreads); workers.reserve(maxThreads);
     for (std::size_t s(0); s < localoptions.simulationsNb;){

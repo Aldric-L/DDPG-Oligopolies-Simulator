@@ -37,8 +37,10 @@ public:
     inline static const float QUAD_COST (float q) { return (float)(C*std::pow(q,2)); }
     inline static const float EXPDECAYED_WHITENOISE (std::size_t it, std::size_t maxiterations) {
         return 1.f - (float)std::pow(1.0001, (float)((float)it -(float)maxiterations)); }
+    /*inline static const float TRUNCEXPDECAYED_WHITENOISE (std::size_t it, std::size_t maxiterations) {
+        return std::max(1.f - (float)std::pow(1.0001, (float)((float)it - 0.65*(float)maxiterations)), 0.f); }*/
     inline static const float TRUNCEXPDECAYED_WHITENOISE (std::size_t it, std::size_t maxiterations) {
-        return std::max(1.f - (float)std::pow(1.0001, (float)((float)it - 0.65*(float)maxiterations)), 0.f); }
+        return std::max(1.f - (float)std::pow(1.0001, (float)((float)it - 0.85*(float)maxiterations)), 0.f); }
     inline static const float TRUNCRESEXPDECAYED_WHITENOISE (std::size_t it, std::size_t maxiterations) {
         return std::max(1.f - (float)std::pow(1.0001, (float)((float)it - 0.85*(float)maxiterations)), (float)0.065); }
     inline static const float LINDECAYED_WHITENOISE (std::size_t it, std::size_t maxiterations) {

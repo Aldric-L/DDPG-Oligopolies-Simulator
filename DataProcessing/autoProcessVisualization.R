@@ -1,16 +1,28 @@
 # library(usethis) 
 # usethis::edit_r_environ(scope="project")
 # R_MAX_VSIZE=100Gb 
-
-agents_nb <- 4
-#folder_path <- "Outputs/Cournot-2-60k-LIN-Gamma0/WN0.15/"
+agents_nb <- 2
+folder_path <- "Outputs/Experimental/E35 (Stackelberg)/"
+#folder_path <- "Outputs/Cournot-2-60k-TRUNC_EXP-Gamma0/"
 #folder_path <- "Outputs/Cournot-2-120k-LIN-Gamma0.99/WN0.15/"
-folder_path <- "Outputs/Cournot-4-100k-LIN-Gamma0/"
+#folder_path <- "Outputs/Cournot-4-100k-LIN-Gamma0/"
 cournot4 <- c("compProfit" = 0, "compQuantity" = 0.423,
               "cournotProfit" = 0.403, "cournotQuantity" = 0.355,
               "cartelProfit" = 0.526, "cartelQuantity" = 0.239,
               "modelTotalProfit" = 1.612,
               "modelTotalQuantity" = 1.419,
+              "cournotTotalQuantity" = 1.419,
+              "reactionFunction" = function(Q) {
+                return((2.2-Q)/(2*(1+0.2)))
+              })
+
+
+cournot4bis <- c("compProfit" = 0.289, "compQuantity" = 0.962,
+              "cournotProfit" = 0.410, "cournotQuantity" = 0.806,
+              "cartelProfit" = 0.489, "cartelQuantity" = 0.543,
+              "modelTotalProfit" = 4*0.410,
+              "modelTotalQuantity" = 4*0.806,
+              "cournotTotalQuantity" = 4*0.806,
               "reactionFunction" = function(Q) {
                 return((2.2-Q)/(2*(1+0.2)))
               })
@@ -20,29 +32,33 @@ cournot2 <- c("compProfit" = 0.16469444444444442, "compQuantity" = 0.91666666666
               "cartelProfit" = 0.539, "cartelQuantity" = 0.5,
               "modelTotalProfit" = 2 * 0.49237370242214545,
               "modelTotalQuantity" = 2 * 0.6470588235294118,
+              "cournotTotalQuantity" = 2 * 0.6470588235294118,
               "reactionFunction" = function(Q) {
                 return((2.2-Q)/(2*(1+0.2)))
               })
 
 stackelberg2bis <- c(
-              "compProfit" = 0.111, "compQuantity" = 0.870,
-              "lowProfit" = 0.306, "lowQuantity" = 0.521,
-              "highProfit" = 0.438, "highQuantity" = 0.801,
-              "cartelProfit" = 0.456, "cartelQuantity" = 0.465,
-              "cournotProfit" = 0.414, "cournotQuantity" = 0.606,
-              "modelTotalProfit" = 0.306+0.438, 
-              "modelTotalQuantity" = 0.521 + 0.801,
+              "compProfit" = 0.037, "compQuantity" = 0.857,
+              "lowProfit" = 0.227, "lowQuantity" = 0.465,
+              "highProfit" = 0.387, "highQuantity" = 0.823,
+              "cartelProfit" = 0.395, "cartelQuantity" = 0.439,
+              "cournotProfit" = 0.354, "cournotQuantity" = 0.581,
+              "modelTotalProfit" = 0.387+0.227, 
+              "modelTotalQuantity" = 0.465 + 0.823,
+              "cournotTotalQuantity" = 0.581 + 0.581,
               "reactionFunction" = function(Q) {
-                return((2.2-Q)/(2*(1+0.2)))
+                return((1.8-Q)/(2*(1+0.05)))
               })
 
 stackelberg2 <- c(
   "compProfit" = 0.16469444444444442, "compQuantity" = 0.9166666666666667,
+  "cournotProfit" = 0.49237370242214545, "cournotQuantity" = 0.6470588235294118,
   "lowProfit" = 0.37931870274102086, "lowQuantity" = 0.5679347826086958,
   "highProfit" = 0.5148647211720228, "highQuantity" = 0.8369565217391304,
   "cartelProfit" = 0.539, "cartelQuantity" = 0.5,
   "modelTotalProfit" = 0.37931870274102086+0.5148647211720228, 
   "modelTotalQuantity" = 0.5679347826086958 + 0.8369565217391304,
+  "cournotTotalQuantity" = 2 * 0.6470588235294118,
   "reactionFunction" = function(Q) {
     return((2.2-Q)/(2*(1+0.2)))
   })
@@ -51,52 +67,63 @@ stackelberg2 <- c(
 
 lightmode <- TRUE
 
-mode <- cournot4
-model <- "COURNOT"
+mode <- stackelberg2
+model <- "STACKELBERG"
 
 ## Import files
 library(data.table)
 csv_files <- list.files(path = folder_path, pattern = "\\.csv$", full.names = TRUE)
 simuls <- list()
+critics <- list()
 
 for (i in 1:length(csv_files)) {
   file_name <- tools::file_path_sans_ext(basename(csv_files[i]))
   last_number <- as.numeric(sub('.*-(\\d+)$', '\\1', file_name))
-  
   data <- read.csv(csv_files[i])
-  if (lightmode)
-    data <- data[data$whitenoise==0,]
-  data <- subset(data, select=-c(iteration))
-  data$totalQuantity <- data$agent1Action
-  data$totalProfit <- data$agent1Profit
-  temp <- data$agent1Profit
-  temp <- ifelse(temp==0, 0.01, temp)
-  data$agent1CriticError <- (data$agent1EstimatedProfit - data$agent1Profit)/temp
-  rm(temp)
-  data$criticError <- data$agent1CriticError
-  for (agent in 2:agents_nb){
-    data$totalQuantity <- data$totalQuantity + data[, paste("agent", agent, "Action", sep="")]
-    data$totalProfit <- data$totalProfit + data[, paste("agent", agent, "Profit", sep="")]
-    temp <- data[, paste("agent", agent, "Profit", sep="")]
+  if (grepl("Critics", file_name)){
+    for (agent in 1:agents_nb){
+      data[, paste("agent", agent, "ActorError", sep="")] <- data[, paste("agent", agent, "Actor", sep="")] - mode[["reactionFunction"]](data$prevState)
+      data[, paste("agent", agent, "CriticError", sep="")] <- data[, paste("agent", agent, "EstimatedProfit", sep="")] - data$agentProfit
+      
+      data[, paste("agent", agent, "CriticErrorNormed", sep="")] <- (data[, paste("agent", agent, "EstimatedProfit", sep="")]-mean(data[, paste("agent", agent, "EstimatedProfit", sep="")], na.rm=T))/sd(data[, paste("agent", agent, "EstimatedProfit", sep="")], na.rm=T) 
+      - (data$agentProfit-mean(data$agentProfit, na.rm=T))/sd(data$agentProfit, na.rm=T)
+    }
+    
+    assign(paste("critic_", toString(last_number), sep=""), data)
+    critics <- append(critics, paste("critic_", toString(last_number), sep=""))
+  }else {
+    if (lightmode)
+      data <- data[data$whitenoise==0,]
+    data <- subset(data, select=-c(iteration))
+    data$totalQuantity <- data$agent1Action
+    data$totalProfit <- data$agent1Profit
+    temp <- data$agent1Profit
     temp <- ifelse(temp==0, 0.01, temp)
-    data[, paste("agent", agent, "CriticError", sep="")] <- (data[, paste("agent", agent, "EstimatedProfit", sep="")] - data[, paste("agent", agent, "Profit", sep="")])/temp
+    data$agent1CriticError <- (data$agent1EstimatedProfit - data$agent1Profit)/temp
     rm(temp)
-    data$criticError <- data$criticError + data[, paste("agent", agent, "CriticError", sep="")] 
+    data$criticError <- data$agent1CriticError
+    for (agent in 2:agents_nb){
+      data$totalQuantity <- data$totalQuantity + data[, paste("agent", agent, "Action", sep="")]
+      data$totalProfit <- data$totalProfit + data[, paste("agent", agent, "Profit", sep="")]
+      temp <- data[, paste("agent", agent, "Profit", sep="")]
+      temp <- ifelse(temp==0, 0.01, temp)
+      data[, paste("agent", agent, "CriticError", sep="")] <- (data[, paste("agent", agent, "EstimatedProfit", sep="")] - data[, paste("agent", agent, "Profit", sep="")])/temp
+      rm(temp)
+      data$criticError <- data$criticError + data[, paste("agent", agent, "CriticError", sep="")] 
+    }
+    for (agent in 1:agents_nb){
+      data[, paste("agent", agent, "ActionError", sep="")] <- data[, paste("agent", agent, "Action", sep="")]-mode[["reactionFunction"]](data$totalQuantity-data[, paste("agent", agent, "Action", sep="")])
+    }
+    data$criticError <- data$criticError / agents_nb
+    assign(paste("sim_", toString(last_number), sep=""), data)
+    simuls <- append(simuls, paste("sim_", toString(last_number), sep=""))
+    # if (i > 1 && nrow(get(simuls[[i]])) != nrow(get(simuls[[i-1]]))){
+    #   library(R.methodsS3)
+    #   throw("ALERT: All simulations are not equally sized")
+    # }
   }
-  for (agent in 1:agents_nb){
-    data[, paste("agent", agent, "ActionError", sep="")] <- mode[["reactionFunction"]](data$totalQuantity-data[, paste("agent", agent, "Action", sep="")])-data[, paste("agent", agent, "Action", sep="")]
-  }
-  data$criticError <- data$criticError / agents_nb
-  assign(paste("sim_", toString(last_number), sep=""), data)
-  simuls <- append(simuls, paste("sim_", toString(last_number), sep=""))
   
-  # if (i > 1 && nrow(get(simuls[[i]])) != nrow(get(simuls[[i-1]]))){
-  #   library(R.methodsS3)
-  #   throw("ALERT: All simulations are not equally sized")
-  # }
 }
-
-rounds <- data$round
 rm(data)
 
 s <- get(simuls[[1]])
@@ -109,6 +136,7 @@ for (i in 2:length(simuls)) {
   simulsData <- rbind(simulsData, s)
 }
 rm(s)
+
 
 ## Convergence test function
 convergence_test <- function(actionVector, threshold_percent) {
@@ -124,6 +152,17 @@ convergence_test <- function(actionVector, threshold_percent) {
 }
 
 
+c <- get(critics[[1]])
+c$simulName <- critics[[1]]
+criticsData <- c
+for (i in 2:length(critics)) {
+  c <- get(critics[[i]])
+  c$simulName <- critics[[i]]
+  
+  criticsData <- rbind(criticsData, c)
+}
+rm(c)
+
 library(ggplot2)
 ## Total quantity plot
 ggplot(simulsData[simulsData$whitenoise==0,], aes(x=round, y=totalQuantity, group=simulName, color=simulName)) +
@@ -131,10 +170,11 @@ ggplot(simulsData[simulsData$whitenoise==0,], aes(x=round, y=totalQuantity, grou
   geom_line(aes(y = agents_nb * mode[["compQuantity"]], color = "Competition")) +
   geom_line(aes(y = agents_nb * mode[["cartelQuantity"]], color = "Cartel")) +
   geom_line(aes(y = mode[["modelTotalQuantity"]], color = "Expected Quantity")) +
+  {if (model == "STACKELBERG")geom_line(aes(y = mode[["cournotTotalQuantity"]], color = "Cournot Quantity"))} +
   geom_smooth(se = FALSE, linewidth=0.1, aes(color = "Simulations")) +
   theme_minimal() + 
   labs(x = "Round", y = "Total Quantity", color = "Legend") +
-  ylim(0,2)
+  ylim(0,agents_nb)
 
 ggplot(simulsData[simulsData$whitenoise==0,], aes(x=round, group=simulName, color=simulName)) +
   #geom_point(alpha = 0.01, aes(color = "Simulations")) +
@@ -160,6 +200,21 @@ ggplot(simulsData[simulsData$whitenoise==0,], aes(x=round, y=totalProfit, group=
   labs(x = "Round", y = "Total Profit", color = "Legend") +
   ylim(0,2)
 
+## Individual profit plot
+ggplot(simulsData[simulsData$whitenoise==0,], aes(x=round, group=simulName)) +
+  geom_smooth(aes(y = agent1Profit, color="Simulations"), se = FALSE, linewidth=0.1) +
+  geom_smooth(aes(y = agent2Profit, color="Simulations"), se = FALSE, linewidth=0.1) +
+  {if (model == "COURNOT")geom_line(aes(y = mode[["cournotProfit"]], color = "Cournot")) } + 
+  {if (model == "STACKELBERG")geom_line(aes(y = mode[["lowProfit"]])) } +
+  {if (model == "STACKELBERG")geom_line(aes(y = mode[["highProfit"]]))} + 
+  geom_line(aes(y = mode[["compProfit"]], color = "Competition")) +
+  geom_line(aes(y = mode[["cartelProfit"]], color = "Cartel")) +
+  geom_line(aes(y = mode[["compProfit"]], color = "Competition")) +
+  geom_line(aes(y = mode[["cartelProfit"]], color = "Cartel")) +
+  geom_line(aes(y = mode[["modelTotalProfit"]], color = "Expected Profit")) +
+  theme_minimal() + 
+  labs(x = "Round", y = "Total Profit", color = "Legend") +
+  ylim(0,1)
 
 ## Critic error
 ggplot(simulsData[simulsData$whitenoise==0&simulsData$round>40000,], aes(x=round, y=criticError, group=simulName, color=simulName)) +
@@ -194,7 +249,7 @@ ggplot(s[s$whitenoise==0,], aes(x = round)) +
   {if (model == "COURNOT")geom_smooth(aes(y = (totalQuantity)/agents_nb, color = "meanTrend"), se = FALSE) } + 
   {if (model == "STACKELBERG")geom_line(aes(y = mode[["lowQuantity"]])) } +
   {if (model == "STACKELBERG")geom_line(aes(y = mode[["highQuantity"]]))} + 
-  {if (model == "STACKELBERG")geom_smooth(aes(y = (2.2-agent1Action)/(2*(1+0.2)), color = "agent3Trend"), se = FALSE)} + 
+  {if (model == "STACKELBERG")geom_smooth(aes(y = mode[["reactionFunction"]](agent1Action), color = "agent3Trend"), se = FALSE)} + 
   geom_line(aes(y = mode[["compQuantity"]], color = "Competition")) +
   geom_line(aes(y = mode[["cournotQuantity"]], color = "Cournot")) +
   geom_line(aes(y = mode[["cartelQuantity"]], color = "Cartel")) +
@@ -223,12 +278,11 @@ ggplot(s[s$whitenoise==0,], aes(x = round)) +
   geom_smooth(aes(y = agent1Profit, color = "agent1Trend"), se = FALSE) +
   geom_smooth(aes(y = agent2Profit, color = "agent2Trend"), se = FALSE) +
   {if (model == "COURNOT")geom_line(aes(y = mode[["cournotProfit"]], color = "Cournot")) } + 
-  {if (model == "COURNOT")geom_smooth(aes(y = (agent1Action+agent2Action)/2, color = "meanTrend"), se = FALSE) } + 
+  {if (model == "COURNOT")geom_smooth(aes(y = (agent1Profit+agent2Profit)/2, color = "meanTrend"), se = FALSE) } + 
   {if (model == "STACKELBERG")geom_line(aes(y = mode[["lowProfit"]])) } +
   {if (model == "STACKELBERG")geom_line(aes(y = mode[["highProfit"]]))} + 
-  geom_line(aes(y = 0.9166666666666667, color = "Competition")) +
-  geom_line(aes(y = 0.6470588235294118, color = "Cournot")) +
-  geom_line(aes(y = 0.5, color = "Cartel")) +
+  geom_line(aes(y = mode[["compProfit"]], color = "Competition")) +
+  geom_line(aes(y = mode[["cartelProfit"]], color = "Cartel")) +
   # geom_line(aes(y = leaderBestAction, color = "Stackelberg")) +
   scale_color_manual(values = c("agent1" = "blue", 
                                 "agent2" = "yellow", 
@@ -331,14 +385,16 @@ grid.arrange(densityplot, cdfplot, nrow = 2)
 
 
 ggplot(tmp) +
-  geom_density(aes(x = followerActions), alpha = 0.5, fill = "orange") +
-  geom_density(aes(x = leaderActions), alpha = 0.5, fill = "orange") +
+  geom_density(aes(x = followerActions), alpha = 0.5, fill = "darkblue") +
+  geom_density(aes(x = leaderActions), alpha = 0.5, fill = "darkred") +
   geom_vline(xintercept=median(followerActions), color="red") + 
   geom_vline(xintercept=median(leaderActions), color="red") + 
-  geom_vline(xintercept=median((leaderActions+followerActions)/2), color="darkred") + 
+  {if (model == "COURNOT")geom_vline(xintercept=median((leaderActions+followerActions)/2), color="darkred")} + 
   {if (model == "COURNOT")geom_vline(xintercept=mode[["cournotQuantity"]]) } + 
   {if (model == "STACKELBERG")geom_vline(xintercept=mode[["lowQuantity"]]) } +
   {if (model == "STACKELBERG")geom_vline(xintercept=mode[["highQuantity"]])} + 
+  theme_minimal() + 
+  xlim(0, 1) + 
   labs(x = "Selected quantity",
        y = "Density", color = "Legend")
 
@@ -351,6 +407,9 @@ ggplot(tmp) +
   geom_vline(xintercept=mode[["modelTotalQuantity"]]*1.05, color="blue", linetype="dotted") + 
   geom_vline(xintercept=mode[["modelTotalQuantity"]]*0.85, color="darkgreen", linetype="dotted") + 
   geom_vline(xintercept=mode[["modelTotalQuantity"]]*1.15, color="darkgreen", linetype="dotted") + 
+  #geom_vline(xintercept=mode[["cournotTotalQuantity"]], color="yellow") + 
+  theme_minimal() + 
+  xlim(0.8, 1.8) + 
   labs(x = "Selected quantity",
        y = "Density", color = "Legend")
 
@@ -376,7 +435,169 @@ summary(meanMaxDists)
 
 shapiro.test(tmp$totalActions)
 
-
 rm(tmp)
+
+###############################################################################
+######## CRITICS ANALYSIS
+
+localcritic <- get(critics[[1]])
+
+averageCritic <- data.frame(prevState= localcritic$prevState, action = localcritic$action, price= localcritic$price,agentProfit=localcritic$agentProfit,
+                            agent1EstimatedProfit=0, agent1CriticError=0,
+                            agent2EstimatedProfit=0, agent2CriticError=0,
+                            agentsEstimatedProfit=0, agentsCriticError=0,
+                            tempEstimatedProfit=0, tempCriticError=0)
+
+for (critic in critics){
+  c <- get(critic)
+  averageCritic[, "tempEstimatedProfit"] <- c[, paste("agent1EstimatedProfit", sep="")]
+  averageCritic[, "tempCriticError"] <- c[, paste("agent1CriticError", sep="")]
+  for (i in 1:agents_nb){
+    averageCritic[, "tempEstimatedProfit"] <- c[, paste("agent", i, "EstimatedProfit", sep="")]
+    averageCritic[, "tempCriticError"] <- c[, paste("agent", i, "CriticError", sep="")]
+    averageCritic[, paste("agent", i, "EstimatedProfit", sep="")] <- averageCritic[, paste("agent", i, "EstimatedProfit", sep="")] + c[, paste("agent", i, "EstimatedProfit", sep="")]
+    averageCritic[, paste("agent", i, "CriticError", sep="")] <- averageCritic[, paste("agent", i, "CriticError", sep="")] + c[, paste("agent", i, "CriticError", sep="")]
+  }
+  averageCritic[, "agentsEstimatedProfit"] <- averageCritic[, "agentsEstimatedProfit"] + averageCritic[, "tempEstimatedProfit"]/agents_nb
+  averageCritic[, "agentsCriticError"] <- averageCritic[, "agentsCriticError"] + averageCritic[, "tempCriticError"]/agents_nb
+}
+rm(c)
+for (i in 1:agents_nb){
+  averageCritic[, paste("agent", i, "EstimatedProfit", sep="")] <- averageCritic[, paste("agent", i, "EstimatedProfit", sep="")]/length(critics)
+  averageCritic[, paste("agent", i, "CriticError", sep="")] <- averageCritic[, paste("agent", i, "CriticError", sep="")]/length(critics)
+}
+
+library(gridExtra)
+library(hrbrthemes)
+library(viridis)
+
+criticsHeatMaps <- list()
+
+
+for (agent in 1:agents_nb){
+  criticsHeatMaps[[length(criticsHeatMaps) + 1]] <- 
+    ggplot(localcritic, aes(x = prevState, y = action, fill = localcritic[, paste("agent", agent, "CriticError", sep="")])) +
+    geom_tile() +
+    geom_vline(xintercept=mode[["cournotQuantity"]]) + 
+    geom_hline(yintercept=mode[["cournotQuantity"]]) + 
+    geom_vline(xintercept=mode[["cartelQuantity"]], color="red") + 
+    geom_hline(yintercept=mode[["cartelQuantity"]], color="red") + 
+    #scale_fill_gradient(low = "white", high = "red") +  # Adjust color gradient as needed
+    scale_fill_viridis(option="inferno") +  
+    labs(x = "Previous State", y = "Action", title = "Estimated profit error", fill = "Legend") +
+    theme_minimal()
+}
+
+grid.arrange(grobs = criticsHeatMaps, ncol = 2)
+
+
+globalErrorhm <- ggplot(averageCritic, aes(x = prevState, y = action, fill = averageCritic[, paste("agentsCriticError", sep="")])) +
+  geom_tile() +
+  geom_vline(xintercept=mode[["cournotQuantity"]]) + 
+  geom_hline(yintercept=mode[["cournotQuantity"]]) + 
+  geom_vline(xintercept=mode[["cartelQuantity"]], color="red") + 
+  geom_hline(yintercept=mode[["cartelQuantity"]], color="red") + 
+  #scale_fill_gradient(low = "white", high = "red") +  # Adjust color gradient as needed
+  scale_fill_viridis(option="inferno") +  
+  labs(x = "Previous State", y = "Action", fill = "Error") +
+  theme_minimal()
+
+hmTrueProfit <- ggplot(averageCritic, aes(x = prevState, y = action, fill = agentProfit)) +
+  geom_tile() +
+  scale_fill_viridis(option="inferno") +  
+  geom_vline(xintercept=mode[["cournotQuantity"]]) + 
+  geom_hline(yintercept=mode[["cournotQuantity"]]) + 
+  geom_vline(xintercept=mode[["cartelQuantity"]], color="red") + 
+  geom_hline(yintercept=mode[["cartelQuantity"]], color="red") + 
+  labs(x = "Previous State", y = "Action", fill = "Profit", limits = c(0, 1)) +
+  theme_minimal()
+
+
+grid.arrange(globalErrorhm, hmTrueProfit, ncol = 2)
+
+hmEstimated <- ggplot(averageCritic, aes(x = prevState, y = action, fill = agent1EstimatedProfit)) +
+  geom_tile() +
+  scale_fill_viridis(option="inferno", limits = c(0, 1)) +  
+  geom_vline(xintercept=mode[["cournotQuantity"]]) + 
+  geom_hline(yintercept=mode[["cournotQuantity"]]) + 
+  labs(x = "Previous State", y = "Action", title = "Estimated profit", fill = "") +
+  theme_minimal()
+
+grid.arrange(hmEstimated, hmTrueProfit, ncol = 2)
+
+hmEstimatedCorr <- ggplot(localcritic, aes(x = prevState, y = action, fill = (agentEstimatedProfit-mean(agent1EstimatedProfit))/sd(agent1EstimatedProfit))) +
+  geom_tile() +
+  scale_fill_viridis(option="inferno", limits = c(-2.5, 2.5)) +  
+  geom_vline(xintercept=mode[["cournotQuantity"]]) + 
+  geom_hline(yintercept=mode[["cournotQuantity"]]) + 
+  labs(x = "Previous State", y = "Action", title = "Estimated profit", fill="") +
+  theme_minimal()
+
+hmTrueProfitCorr <- ggplot(localcritic, aes(x = prevState, y = action, fill = (agentProfit-mean(agentProfit))/sd(agentProfit))) +
+  geom_tile() +
+  scale_fill_viridis(option="inferno",limits = c(-2.5, 2.5)) +  
+  geom_vline(xintercept=mode[["cournotQuantity"]]) + 
+  geom_hline(yintercept=mode[["cournotQuantity"]]) + 
+  labs(x = "Previous State", y = "Action", title = "True profit", fill="") +
+  theme_minimal()
+
+grid.arrange(hmEstimatedCorr, hmTrueProfitCorr, ncol = 2)
+
+ggplot(criticsData, aes(x=agentProfit, group=simulName, color=simulName)) +
+  geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent1CriticErrorNormed, color = "Simulations")) +
+  geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent2CriticErrorNormed, color = "Simulations")) +
+  {if (agents_nb>=3)geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent3CriticError, color = "Simulations")) } + 
+  {if (agents_nb>=4)geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent4CriticError, color = "Simulations")) } +
+  geom_smooth(se = FALSE, linewidth=1, aes(group=1, y=(agent1CriticError+agent2CriticError)/2, color = "Simulations (Trend)")) +
+  geom_vline(aes(xintercept=mode[["cournotProfit"]], color="Cournot profit")) + 
+  scale_color_manual(values = c("Simulations (Trend)" = "lightblue", 
+                                "Simulations" = "darkblue",
+                                "Cournot profit" = "blue")) +
+  theme_minimal() + 
+  labs(x = "Agent Profit", y = "Critic estimation error", color = "Legend")
+
+
+ggplot(criticsData, aes(x=agentProfit, group=simulName, color=simulName)) +
+  geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent1CriticError, color = "Simulations")) +
+  geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent2CriticError, color = "Simulations")) +
+  {if (agents_nb>=3)geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent3CriticError, color = "Simulations")) } + 
+  {if (agents_nb>=4)geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent4CriticError, color = "Simulations")) } +
+  geom_smooth(se = FALSE, linewidth=1, aes(group=1, y=(agent1CriticError+agent2CriticError)/2, color = "Simulations (Trend)")) +
+  geom_vline(aes(xintercept=mode[["cournotProfit"]], color="Cournot profit")) + 
+  scale_color_manual(values = c("Simulations (Trend)" = "lightblue", 
+                                "Simulations" = "darkblue",
+                                "Cournot profit" = "blue")) +
+  theme_minimal() + 
+  labs(x = "Agent Profit", y = "Critic estimation error", color = "Legend")
+
+ggplot(criticsData[criticsData$agent1Actor!=-1,], aes(x=prevState, group=simulName, color=simulName)) +
+  geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent1ActorError, color = "Simulations")) +
+  geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent2ActorError, color = "Simulations")) +
+  {if (agents_nb>=3)geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent3ActorError, color = "Simulations")) } + 
+  {if (agents_nb>=4)geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent4ActorError, color = "Simulations")) } +
+  geom_smooth(se = FALSE, linewidth=1, aes(group=1, y=(agent1ActorError+agent2ActorError)/2, color = "Simulations (Trend)")) +
+  geom_vline(aes(xintercept=mode[["cournotQuantity"]], color="Cournot quantity")) + 
+  scale_color_manual(values = c("Simulations (Trend)" = "lightblue", 
+                                "Simulations" = "darkblue",
+                                "Cournot quantity" = "blue")) +
+  theme_minimal() + 
+  labs(x = "Previous State", y = "Actor (v. best response) error", color = "Legend")
+
+ggplot(criticsData[criticsData$agent1Actor!=-1,], aes(x=prevState, group=simulName, color=simulName)) +
+  geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent1Actor, color = "Simulations")) +
+  geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent2Actor, color = "Simulations")) +
+  {if (agents_nb>=3)geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent3Actor, color = "Simulations")) } + 
+  {if (agents_nb>=4)geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent4Actor, color = "Simulations")) } +
+  geom_smooth(se = FALSE, linewidth=1, aes(group=1, y=(agent1Actor+agent2Actor)/2, color = "Simulations (Trend)")) +
+  geom_line(aes(y=mode[["reactionFunction"]](criticsData[criticsData$agent1Actor!=-1,]$prevState), color="Best response")) +
+  geom_vline(aes(xintercept=mode[["cournotQuantity"]], color="Cournot quantity")) + 
+  scale_color_manual(values = c("Simulations (Trend)" = "lightblue", 
+                                "Simulations" = "darkblue",
+                                "Cournot quantity" = "blue",
+                                "Best response" = "darkgrey")) + 
+  theme_minimal() + 
+  labs(x = "Previous State", y = "Actor decision", color = "Legend") + 
+  ylim(0,1)
+
 ## ggplot() + geom_density(aes(x = notes), alpha = 0.5, fill = "orange") + xlim(0, 20) +   stat_function(fun = dnorm, n = 101, args = list(mean = 10, sd = 3)) 
 

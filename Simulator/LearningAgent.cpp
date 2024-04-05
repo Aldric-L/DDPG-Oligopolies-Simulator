@@ -56,11 +56,14 @@ void LearningAgent::train(bool mute) {
                 .input_actor = &rBufferInputsStates.at(target),
                 .input_critic = new akml::DynamicMatrix<float> (akml::make_dynamic_vector<float>( replayBuffer.at(target).prevState, policyNet.process(akml::make_dynamic_vector<float>( replayBuffer.at(target).prevState)).read(1,1))),
                 .output_expected = new akml::DynamicMatrix<float> (akml::make_dynamic_vector<float>(
-                            renorm(replayBuffer.at(target).reward +
+                            renorm((1.f - gamma) * replayBuffer.at(target).reward +
                             gamma * (1 - replayBuffer.at(target).isTerminated ) * target_QNet.process(
                                 akml::make_dynamic_vector<float>(replayBuffer.at(target).nextState,
                                 target_policyNet.process(akml::make_dynamic_vector<float>(replayBuffer.at(target).nextState)).read(1,1))).read(1,1))))
             });
+            
+            if (batch_elems.back().output_expected->read(1,1) > 1.1 || batch_elems.back().output_expected->read(1,1) < 0)
+                throw std::runtime_error("We are expecting the AI to output " + std::to_string(batch_elems.back().output_expected->read(1,1)));
         }
         
         // For each batch

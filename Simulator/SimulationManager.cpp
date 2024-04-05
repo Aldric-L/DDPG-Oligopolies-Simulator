@@ -106,7 +106,7 @@ std::string SimulationManager::processSimulation(bool mute) {
         
         for (std::size_t inside_iteration(0); inside_iteration < 127; inside_iteration++){
             for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
-                agents[agent_i]->feedBack(buffer.at(inside_iteration).at(agent_i).prevState, buffer.at(inside_iteration).at(agent_i).action, buffer.at(inside_iteration).at(agent_i).profit, buffer.at(inside_iteration+1).at(agent_i).prevState, inside_iteration == 126, false );
+                agents[agent_i]->feedBack(buffer.at(inside_iteration).at(agent_i).prevState, buffer.at(inside_iteration).at(agent_i).action, buffer.at(inside_iteration).at(agent_i).profit, buffer.at(inside_iteration+1).at(agent_i).prevState, /*inside_iteration == 126*/false, false );
             }
         }
         for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
