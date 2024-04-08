@@ -1,8 +1,8 @@
 # library(usethis) 
 # usethis::edit_r_environ(scope="project")
 # R_MAX_VSIZE=100Gb 
-agents_nb <- 2
-folder_path <- "Outputs/Experimental/E35 (Stackelberg)/"
+agents_nb <- 4
+folder_path <- "Outputs/Experimental/E57 (Cournot4)/"
 #folder_path <- "Outputs/Cournot-2-60k-TRUNC_EXP-Gamma0/"
 #folder_path <- "Outputs/Cournot-2-120k-LIN-Gamma0.99/WN0.15/"
 #folder_path <- "Outputs/Cournot-4-100k-LIN-Gamma0/"
@@ -67,8 +67,8 @@ stackelberg2 <- c(
 
 lightmode <- TRUE
 
-mode <- stackelberg2
-model <- "STACKELBERG"
+mode <- cournot4bis
+model <- "COURNOT"
 
 ## Import files
 library(data.table)
@@ -235,7 +235,7 @@ ggplot(simulsData[simulsData$whitenoise==0,], aes(x=round, group=simulName, colo
   labs(x = "Round", y = "Deviation from (static) best response function", color = "Legend")
 
 ## One simul plot
-s <- get(simuls[[4]])
+s <- get(simuls[[2]])
 ggplot(s[s$whitenoise==0,], aes(x = round)) +
   geom_point(aes(y = agent2Action, color = "agent2"), alpha = 0.1) +
   geom_point(aes(y = agent1Action, color = "agent1"), alpha = 0.1) +
@@ -434,6 +434,31 @@ print(CI15share)
 summary(meanMaxDists)
 
 shapiro.test(tmp$totalActions)
+mean(tmp$totalActions)
+sd(tmp$totalActions)
+
+## Single agent tests
+# Follower
+CI5shareF <- nrow(tmp[tmp$followerActions>=mode[["lowQuantity"]]*0.95&tmp$followerActions<=mode[["lowQuantity"]]*1.05,])/nrow(tmp)
+print(CI5shareF)
+CI10shareF <- nrow(tmp[tmp$followerActions>=mode[["lowQuantity"]]*0.90&tmp$followerActions<=mode[["lowQuantity"]]*1.10,])/nrow(tmp)
+print(CI10shareF)
+CI15shareF <- nrow(tmp[tmp$followerActions>=mode[["lowQuantity"]]*0.85&tmp$followerActions<=mode[["lowQuantity"]]*1.15,])/nrow(tmp)
+print(CI15shareF)
+shapiro.test(tmp$followerActions)
+mean(tmp$followerActions)
+sd(tmp$followerActions)
+
+# Leader
+CI5shareL <- nrow(tmp[tmp$leaderActions>=mode[["highQuantity"]]*0.95&tmp$leaderActions<=mode[["highQuantity"]]*1.05,])/nrow(tmp)
+print(CI5shareL)
+CI10shareL <- nrow(tmp[tmp$leaderActions>=mode[["highQuantity"]]*0.90&tmp$leaderActions<=mode[["highQuantity"]]*1.10,])/nrow(tmp)
+print(CI10shareL)
+CI15shareL <- nrow(tmp[tmp$leaderActions>=mode[["highQuantity"]]*0.85&tmp$leaderActions<=mode[["highQuantity"]]*1.15,])/nrow(tmp)
+print(CI15shareL)
+shapiro.test(tmp$leaderActions)
+mean(tmp$leaderActions)
+sd(tmp$leaderActions)
 
 rm(tmp)
 
