@@ -5,12 +5,14 @@ source("autoImportCSV.R")
 #values computed for each oligopoly
 source("utilsOligopolies.R")
 agents_nb <- 4
-folder_path <- "Outputs/Experimental/E57 (Cournot4)/"
+#folder_path <- "Outputs/Experimental/E57 (Cournot4)/"
+#folder_path <- "Outputs/Cournot-2-90k-TRUNC_EXP/gamma0.5/"
+folder_path <- "Outputs/Experimental/E58 (Cournot4)/gamma0.0Unstable/"
 #folder_path <- "Outputs/Cournot-2-60k-TRUNC_EXP-Gamma0/"
 #folder_path <- "Outputs/Cournot-2-120k-LIN-Gamma0.99/WN0.15/"
 #folder_path <- "Outputs/Cournot-4-100k-LIN-Gamma0/"
 
-mode <- cournot4bis
+mode <- cournot4Unstable
 model <- "COURNOT"
 
 autoImport(folder_path = folder_path, agents_nb = agents_nb, lightmode = TRUE, mode=mode)
@@ -186,11 +188,14 @@ followerActions <- c()
 leaderActions <- c()
 meanMaxDists <- c()
 sdMaxDists <- c()
+deltas <- c()
 actionsDivergence <- c()
+sims <- c()
 
 for (i in 1:length(simuls)) {
   s <- get(simuls[[i]])
   s <- s[s$whitenoise==0,]
+  sims <- append(sims, simuls[[i]])
   meanMaxDists <- append(meanMaxDists, computeMeanMaxDistance(agents_nb, s[s$round>58000&s$whitenoise==0,])$meansDiff)
   sdMaxDists <- append(sdMaxDists, computeMeanMaxDistance(agents_nb, s[s$round>58000&s$whitenoise==0,])$sdDiff)
   convergenceTotalActions <- append(convergenceTotalActions, convergence_test(s$totalQuantity, 0.98)$mean)
@@ -198,12 +203,14 @@ for (i in 1:length(simuls)) {
   a2 <- convergence_test(s$agent2Action, 0.98)$mean
   followerActions <- append(followerActions, min(a1, a2))
   leaderActions <- append(leaderActions, max(a1, a2))
+  delt <- (convergence_test(s$totalProfit, 0.98)$mean - mode[["modelTotalProfit"]])/((mode[["cartelProfit"]] * agents_nb) - mode[["modelTotalProfit"]])
+  deltas <- append(deltas, delt)
   for (agent in 2:agents_nb){
     actionsDivergence <- append(actionsDivergence, convergence_test(s[, paste("agent", agent, "ActionError", sep="")], 0.98)$mean)
   }
   rm(s)
 }
-tmp <- data.frame(totalActions = convergenceTotalActions, followerActions, leaderActions)
+tmp <- data.frame(simul = sims, totalActions = convergenceTotalActions, followerActions, leaderActions)
 
 ## Total density and cdf
 library(gridExtra)
@@ -250,7 +257,8 @@ ggplot(tmp) +
   geom_vline(xintercept=mode[["modelTotalQuantity"]]*1.15, color="darkgreen", linetype="dotted") + 
   #geom_vline(xintercept=mode[["cournotTotalQuantity"]], color="yellow") + 
   theme_minimal() + 
-  xlim(0.8, 1.8) + 
+  #xlim(0.8, 1.8) + 
+  xlim(2.4, 4) + 
   labs(x = "Selected quantity",
        y = "Density", color = "Legend")
 
@@ -273,6 +281,7 @@ print(CI15share)
 
 # Distance btw agents
 summary(meanMaxDists)
+summary(deltas)
 
 shapiro.test(tmp$totalActions)
 mean(tmp$totalActions)
@@ -356,6 +365,17 @@ hmTrueProfit <- ggplot(averageCritic, aes(x = prevState, y = action, fill = agen
 
 
 grid.arrange(globalErrorhm, hmTrueProfit, ncol = 2)
+
+ggplot(localcritic, aes(x = prevState, y = action, fill = get("critic_23376476843")$agent1EstimatedProfit/max(get("critic_23376476843")$agent1EstimatedProfit) -  get("critic_54590385298")$agent2EstimatedProfit/max(get("critic_54590385298")$agent2EstimatedProfit))) +
+  geom_tile() +
+  geom_vline(xintercept=mode[["cournotQuantity"]]) + 
+  geom_hline(yintercept=mode[["cournotQuantity"]]) + 
+  geom_vline(xintercept=mode[["cartelQuantity"]], color="red") + 
+  geom_hline(yintercept=mode[["cartelQuantity"]], color="red") + 
+  #scale_fill_gradient(low = "white", high = "red") +  # Adjust color gradient as needed
+  scale_fill_viridis(option="inferno") +  
+  labs(x = "Previous State", y = "Action", fill = "") +
+  theme_minimal()
 
 hmEstimated <- ggplot(averageCritic, aes(x = prevState, y = action, fill = agent1EstimatedProfit)) +
   geom_tile() +

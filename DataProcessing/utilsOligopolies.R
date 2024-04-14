@@ -1,23 +1,33 @@
-cournot4 <- c("compProfit" = 0, "compQuantity" = 0.423,
-              "cournotProfit" = 0.403, "cournotQuantity" = 0.355,
-              "cartelProfit" = 0.526, "cartelQuantity" = 0.239,
-              "modelTotalProfit" = 1.612,
-              "modelTotalQuantity" = 1.419,
-              "cournotTotalQuantity" = 1.419,
-              "reactionFunction" = function(Q) {
-                return((2.2-Q)/(2*(1+0.2)))
-              })
+# cournot4 <- c("compProfit" = 0, "compQuantity" = 0.423,
+#               "cournotProfit" = 0.403, "cournotQuantity" = 0.355,
+#               "cartelProfit" = 0.526, "cartelQuantity" = 0.239,
+#               "modelTotalProfit" = 1.612,
+#               "modelTotalQuantity" = 1.419,
+#               "cournotTotalQuantity" = 1.419,
+#               "reactionFunction" = function(Q) {
+#                 return((2.2-Q)/(2*(1+0.2)))
+#               })
 
 
-cournot4bis <- c("compProfit" = 0.289, "compQuantity" = 0.962,
+cournot4Stable <- c("compProfit" = 0.289, "compQuantity" = 0.962,
                  "cournotProfit" = 0.410, "cournotQuantity" = 0.806,
                  "cartelProfit" = 0.489, "cartelQuantity" = 0.543,
                  "modelTotalProfit" = 4*0.410,
                  "modelTotalQuantity" = 4*0.806,
                  "cournotTotalQuantity" = 4*0.806,
                  "reactionFunction" = function(Q) {
-                   return((2.2-Q)/(2*(1+0.2)))
+                   return((5-Q)/(2*(1+0.6)))
                  })
+
+cournot4Unstable <- c("compProfit" = 0.275, "compQuantity" = 1,
+                    "cournotProfit" = 0.410, "cournotQuantity" = 0.833,
+                    "cartelProfit" = 0.497, "cartelQuantity" = 0.556,
+                    "modelTotalProfit" = 4*0.410,
+                    "modelTotalQuantity" = 4*0.833,
+                    "cournotTotalQuantity" = 4*0.833,
+                    "reactionFunction" = function(Q) {
+                      return((5-Q)/(2*(1+0.5)))
+                    })
 
 cournot2 <- c("compProfit" = 0.16469444444444442, "compQuantity" = 0.9166666666666667,
               "cournotProfit" = 0.49237370242214545, "cournotQuantity" = 0.6470588235294118,

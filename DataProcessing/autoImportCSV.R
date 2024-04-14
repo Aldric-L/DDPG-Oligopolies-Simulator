@@ -70,7 +70,7 @@ autoImport <- function (folder_path, lightmode, agents_nb, mode, importCritics =
   rm(s)
   assign("simulsData", simulsData, envir = .GlobalEnv)
   
-  if (importCritics){
+  if (importCritics && length(critics) > 0){
     c <- get(critics[[1]])
     c$simulName <- critics[[1]]
     criticsData <- c
@@ -84,6 +84,17 @@ autoImport <- function (folder_path, lightmode, agents_nb, mode, importCritics =
     assign("criticsData", criticsData, envir = .GlobalEnv)
   }
   
+}
+
+cleanSimulationsFromRam <- function(simuls, critics){
+  rm(list = unlist(simuls), envir = .GlobalEnv)
+  rm(list = "simulsData", envir = .GlobalEnv)
+  rm(list = "simuls", envir = .GlobalEnv)
+  if (i <= length(critics) && length(critics) > 0){
+    rm(list = "criticsData", envir = .GlobalEnv)
+    rm(list = unlist(critics), envir = .GlobalEnv)
+    rm(list = "critics", envir = .GlobalEnv)
+  }
 }
 
 # library(usethis) 
