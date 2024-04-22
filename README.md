@@ -42,4 +42,16 @@ The simulator is based on the work of Timothy P. Lillicrap et al (10.48550/arXiv
 | autoProcessVisualization.R : R script to regenerate plots
 | evaluateGammaOnCollusion.R : features all the regressions used to assess the causis of algorithmic collusion
 | utilsOligopolies.R : hyperparameters and other R functions
+
+- Strategies and equilibria on selected markets.pdf : The paper
+```
+
+## Cite this work
+```
+@mastersthesis{Labarthe_2024,
+    author = {Aldric Labarthe},
+    date-added = {2024-04-22 16:42:42 +0200},
+    school = {Ecole Normale Sup{\'e}rieure Paris-Saclay},
+    title = {Strategies and equilibria on selected markets: a multi-agent simulation and stochastic modeling approach},
+    year = {2024}}
 ```
