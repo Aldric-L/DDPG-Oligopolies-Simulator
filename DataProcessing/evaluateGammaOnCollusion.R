@@ -6,7 +6,8 @@ agents_nb <- 2
 mode <- cournot2
 model <- "COURNOT"
 
-gammas <- c(-2, -1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8)
+#gammas <- c(-2, -1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8)
+gammas <- c(-4, -3, -2, -1, 0, 0.5)
 
 results <- data.frame(convergenceTotalActions = numeric(), convergenceTotalProfits = numeric(),meanMaxDists = numeric(), 
                       sdMaxDists = numeric(), Delta = numeric(), gamma=numeric(),
@@ -24,11 +25,13 @@ distrib_results <- data.frame(gamma=numeric(), n=numeric(),
 
 for (gamma in gammas){
   if (gamma == -1)
-    #folder_path <- "Outputs/Cournot-2-60k-LIN-Gamma0/WN0.3/"
     folder_path <- "Outputs/Cournot-2-90k-TRUNC_EXP/60kgamma0m1000"
   else if (gamma == -2)
-    #folder_path <- "Outputs/Cournot-2-60k-TRUNC_EXP-Gamma0/"
     folder_path <- "Outputs/Cournot-2-90k-TRUNC_EXP/60kgamma0m500"
+  else if (gamma == -3)
+    folder_path <- "Outputs/Cournot-2-90k-TRUNC_EXP/gamma0.5m2000"
+  else if (gamma == -4)
+    folder_path <- "Outputs/Cournot-2-90k-TRUNC_EXP/gamma0.5m3000"
   else
     folder_path <- paste(sep = "", "Outputs/Cournot-2-90k-TRUNC_EXP/gamma", gamma, "/")
   autoImport(folder_path = folder_path, agents_nb = agents_nb, lightmode = TRUE, mode=mode,importCritics=T)

@@ -7,14 +7,15 @@ source("utilsOligopolies.R")
 agents_nb <- 4
 #folder_path <- "Outputs/Experimental/E57 (Cournot4)/"
 #folder_path <- "Outputs/Cournot-2-90k-TRUNC_EXP/gamma0.5/"
-folder_path <- "Outputs/Experimental/E58 (Cournot4)/gamma0.0Unstable/"
+folder_path <- "Outputs/Experimental/E58 (Cournot4)/gamma0.0Stable2000/"
 #folder_path <- "Outputs/Cournot-2-60k-TRUNC_EXP-Gamma0/"
 #folder_path <- "Outputs/Cournot-2-120k-LIN-Gamma0.99/WN0.15/"
 #folder_path <- "Outputs/Cournot-4-100k-LIN-Gamma0/"
 
-mode <- cournot4Unstable
+mode <- cournot4Stable
 model <- "COURNOT"
 
+#cleanSimulationsFromRam(simuls, critics)
 autoImport(folder_path = folder_path, agents_nb = agents_nb, lightmode = TRUE, mode=mode)
 
 library(ggplot2)
@@ -39,6 +40,8 @@ ggplot(simulsData[simulsData$whitenoise==0,], aes(x=round, group=simulName, colo
   {if (model == "STACKELBERG")geom_line(aes(y = mode[["highQuantity"]], color="Stackelberg Follower"))} + 
   geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent1Action, color = "Simulations")) +
   geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent2Action, color = "Simulations")) +
+  {if (agents_nb>=3) geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent3Action, color = "Simulations"))} +
+  {if (agents_nb>=4) geom_smooth(se = FALSE, linewidth=0.1, aes(y=agent4Action, color = "Simulations"))} +
   theme_minimal() + 
   labs(x = "Round", y = "Quantity", color = "Legend") +
   ylim(0,1)
@@ -281,6 +284,7 @@ print(CI15share)
 
 # Distance btw agents
 summary(meanMaxDists)
+sd(meanMaxDists)
 summary(deltas)
 
 shapiro.test(tmp$totalActions)
