@@ -1,12 +1,13 @@
 #  DDPG-Oligopolies
-### - Aldric L. 2024 ENS Paris Saclay
+### Aldric L. 2024 ENS Paris Saclay
 
 This repository contains the source code and the simulations data used in my master thesis *Strategies and equilibria on selected markets: a multi-agent simulation and stochastic modeling approach* for the Ecole Normale Supérieure Paris-Saclay (France).
 
 The simulator is based on the work of Timothy P. Lillicrap et al (10.48550/arXiv.1509.02971) and features self-learning agents in standard oligopoly models (Cournot, Stackelberg).  The simulator is able to simulate various simulation lengths with almost every parameter being tunable via the CLI.
 
 ## CLI Usage 
-‘‘‘
+
+```
 -h, --help                  Show this help message and exit 
 -o, --oligopolyModel=value  Choose the model (COURNOT|STACKELBERG|TEMPORAL_COURNOT)  
 -N, --maxIterations=value   Set the number of iterations 
@@ -26,11 +27,11 @@ The simulator is based on the work of Timothy P. Lillicrap et al (10.48550/arXiv
 -C, --modC=value            Edit the marginal cost of the model 
 -D, --modD=value            Edit the demand hyperparameter of the model 
 -E, --exportCritics         Should we dump critics of agents at the end of simulation ? 
-‘‘‘
+```
 
 ## Repository organization
 
-‘‘‘
+```
 - Simulator/ : Where the C++ source files are
 
 - DataProcessing/ : Where data and R scripts are
@@ -41,4 +42,4 @@ The simulator is based on the work of Timothy P. Lillicrap et al (10.48550/arXiv
 | autoProcessVisualization.R : R script to regenerate plots
 | evaluateGammaOnCollusion.R : features all the regressions used to assess the causis of algorithmic collusion
 | utilsOligopolies.R : hyperparameters and other R functions
-‘‘‘
+```
