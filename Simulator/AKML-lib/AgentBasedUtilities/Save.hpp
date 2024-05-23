@@ -13,9 +13,15 @@
 #include "../Matrices.hpp"
 
 namespace akml {
-    class AbstractSave {};
+    class AbstractSave {
+        protected:
+            std::size_t parameters_nb;
+        public:
+            inline const std::size_t getParametersNb() const { return parameters_nb; }
+            inline virtual std::string printAsCSV() = 0;
+    };
 
-    template <std::size_t parameters_nb, typename... types>
+    template <std::size_t PARAMETERS_NB, typename... types>
     class Save : public AbstractSave{
         private:
             template<std::size_t i>
@@ -26,37 +32,41 @@ namespace akml {
                 
                 static void run(std::string& rtrn_to_edit, std::tuple<types...>& parameters) {
                     rtrn_to_edit += to_string(std::get<i>(parameters));
-                    if (i != parameters_nb-1)
+                    if (i != PARAMETERS_NB-1)
                         rtrn_to_edit += ", ";
                 }
             };
         
         protected:
-            std::array<std::string, parameters_nb> parameters_name;
             std::tuple<types...> parameters;
         
         public:
-            static inline std::array<std::string, parameters_nb> default_parameters_name;
-        
-            inline Save(const std::tuple<types...>& param) : parameters(param), parameters_name(default_parameters_name) {};
-        
-            inline Save(const types... params) : parameters_name(default_parameters_name){
-                parameters = std::make_tuple(params...);
+            inline Save(const std::tuple<types...>& param) : parameters(param){
+                parameters_nb = PARAMETERS_NB;
             };
         
-            inline Save() : parameters_name(default_parameters_name){};
+            inline Save(const types... params){
+                parameters = std::make_tuple(params...);
+                parameters_nb = PARAMETERS_NB;
+            };
         
-            inline void setParameterNames(std::array<std::string, parameters_nb> pn){
-                parameters_name = pn;
-            }
+            inline Save(){
+                parameters_nb = PARAMETERS_NB;
+            };
         
             template <int param_id, typename type>
             inline void editParameter(type& param_val){
-                std::get<param_id>(parameters) = param_val;
+                if (param_id < parameters_nb)
+                    std::get<param_id>(parameters) = param_val;
+                else
+                    throw std::invalid_argument("Dimension error in attempting to edit a save object.");
             }
         
             inline void editParameters(types... params){
-                parameters = std::make_tuple(params...);
+                if (sizeof...(params) == parameters_nb)
+                    parameters = std::make_tuple(params...);
+                else
+                    throw std::invalid_argument("Dimension error in attempting to edit a save object.");
             }
         
             template <int param_id, typename type>
@@ -66,56 +76,51 @@ namespace akml {
             
             inline std::string printAsCSV() {
                 std::string rtrn ("");
-                akml::for_<0, parameters_nb>::template run<exportLayer_functor,std::string&, std::tuple<types...>&>(rtrn, parameters);
-                return rtrn;
-            }
-        
-            inline std::string printTitleAsCSV() {
-                std::string rtrn ("");
-                for (std::size_t i(0); i < parameters_nb; i++){
-                    rtrn += parameters_name[i];
-                    if (i != parameters_nb-1)
-                        rtrn += ", ";
-                }
+                akml::for_<0, PARAMETERS_NB>::template run<exportLayer_functor,std::string&, std::tuple<types...>&>(rtrn, parameters);
                 return rtrn;
             }
     };
 
-    template <unsigned short int parameters_nb, akml::Matrixable MATRIX_INNER_TYPE>
+    template <std::size_t PARAMETERS_NB, akml::Matrixable MATRIX_INNER_TYPE>
     class MatrixSave : public AbstractSave {
         protected:
-            std::array<std::string, parameters_nb> parameters_name;
-            akml::Matrix<MATRIX_INNER_TYPE, parameters_nb, 1> parameters;
+            akml::Matrix<MATRIX_INNER_TYPE, PARAMETERS_NB, 1> parameters;
         
         public:
-            static inline std::array<std::string, parameters_nb> default_parameters_name;
-        
-            inline MatrixSave(const akml::Matrix<MATRIX_INNER_TYPE, parameters_nb, 1>& param) : parameters(param), parameters_name(default_parameters_name) {};
-        
-            template<typename... types>
-            inline MatrixSave(const types... params) : parameters_name(default_parameters_name){
-                parameters = akml::make_vector<MATRIX_INNER_TYPE>(params...);
+            inline MatrixSave(const akml::Matrix<MATRIX_INNER_TYPE, PARAMETERS_NB, 1>& param) : parameters(param){
+                parameters_nb = PARAMETERS_NB;
             };
         
-            inline MatrixSave() : parameters_name(default_parameters_name){};
+            template<typename... types>
+            inline MatrixSave(const types... params) {
+                parameters = akml::make_vector<MATRIX_INNER_TYPE>(params...);
+                parameters_nb = PARAMETERS_NB;
+            };
         
-            inline void setParameterNames(std::array<std::string, parameters_nb> pn){
-                parameters_name = pn;
-            }
+            inline MatrixSave() {};
         
-            template <int param_id, typename type>
+            template <std::size_t param_id, typename type>
             inline void editParameter(type& param_val){
-                parameters[{param_id, 0}] = param_val;
+                if (param_id < parameters_nb)
+                    parameters[{param_id, 0}] = param_val;
+                else
+                    throw std::invalid_argument("Dimension error in attempting to edit a save object.");
             }
         
             template<typename... types>
             inline void editParameters(types... params){
-                parameters = std::move(akml::make_vector<MATRIX_INNER_TYPE>(params...));
+                if (sizeof...(params) == parameters_nb)
+                    parameters = std::move(akml::make_vector<MATRIX_INNER_TYPE>(params...));
+                else
+                    throw std::invalid_argument("Dimension error in attempting to edit a save object.");
             }
         
-            template <int param_id, typename type>
+            template <std::size_t param_id, typename type>
             inline type& getParameter(){
-                return parameters[{param_id, 0}];
+                if (param_id < parameters_nb)
+                    return parameters[{param_id, 0}];
+                else
+                    throw std::invalid_argument("Dimension error in attempting to edit a save object.");
             }
             
             inline std::string printAsCSV() {
@@ -127,53 +132,40 @@ namespace akml {
                 }
                 return rtrn;
             }
-        
-            inline std::string printTitleAsCSV() {
-                std::string rtrn ("");
-                for (std::size_t i(0); i < parameters_nb; i++){
-                    rtrn += parameters_name[i];
-                    if (i != parameters_nb-1)
-                        rtrn += ", ";
-                }
-                return rtrn;
-            }
     };
 
     template <akml::Matrixable MATRIX_INNER_TYPE>
     class DynamicMatrixSave : public AbstractSave {
-        public:
-            std::size_t parameters_nb;
-            static inline std::vector<std::string> default_parameters_name;
-        
         protected:
-            std::vector<std::string> parameters_name;
             akml::DynamicMatrix<MATRIX_INNER_TYPE> parameters;
         
         public:
-            inline DynamicMatrixSave(const std::size_t parameters_nb, const akml::DynamicMatrix<MATRIX_INNER_TYPE>& param) : parameters_nb(parameters_nb), parameters(param), parameters_name(default_parameters_name) {};
-        
-            template<typename... types>
-            inline DynamicMatrixSave(const std::size_t parameters_nb, const types... params) : parameters_nb(parameters_nb), parameters_name(default_parameters_name), parameters(akml::make_dynamic_vector<MATRIX_INNER_TYPE>(params...)){
+            inline DynamicMatrixSave(const std::size_t param_nb, const akml::DynamicMatrix<MATRIX_INNER_TYPE>& param) : parameters(param){
+                parameters_nb = param_nb;
             };
         
-            inline DynamicMatrixSave(const std::size_t parameters_nb) : parameters_nb(parameters_nb), parameters(parameters_nb, 1), parameters_name(default_parameters_name){};
+            template<typename... types>
+            inline DynamicMatrixSave(const std::size_t param_nb, const types... params) : parameters(akml::make_dynamic_vector<MATRIX_INNER_TYPE>(params...)){
+                parameters_nb = param_nb;
+            };
         
-            inline DynamicMatrixSave() : parameters(0, 0), parameters_name(default_parameters_name){};
+            inline DynamicMatrixSave(const std::size_t param_nb) : parameters(parameters_nb, 1) {
+                parameters_nb = param_nb;
+            };
         
-            inline void operator=(DynamicMatrixSave other){
+            inline DynamicMatrixSave() : parameters(0, 0){};
+        
+            inline void operator=(const DynamicMatrixSave& other){
                 parameters.forceAssignement(other.getParameters());
                 parameters_nb = other.getParameters().getNRows();
             }
         
-            inline void setParameterNames(std::vector<std::string> pn){
-                if (pn.size() != parameters_nb)
-                    throw std::invalid_argument("Invalid parameter list length");
-                parameters_name = pn;
-            }
-        
-            template <int param_id, typename type>
+            template <std::size_t param_id, typename type>
             inline void editParameter(type& param_val){
-                parameters[{param_id, 0}] = param_val;
+                if (param_id < parameters_nb)
+                    parameters[{param_id, 0}] = param_val;
+                else
+                    throw std::invalid_argument("Dimension error in attempting to edit a save object.");
             }
         
             template<typename... types>
@@ -182,9 +174,12 @@ namespace akml {
                 parameters_nb = parameters.getNRows();
             }
         
-            template <int param_id, typename type>
+            template <std::size_t param_id, typename type>
             inline type& getParameter(){
-                return parameters[{param_id, 0}];
+                if (param_id < parameters_nb)
+                    return parameters[{param_id, 0}];
+                else
+                    throw std::invalid_argument("Dimension error in attempting to edit a save object.");
             }
         
             inline akml::DynamicMatrix<MATRIX_INNER_TYPE> getParameters(){
@@ -200,17 +195,55 @@ namespace akml {
                 }
                 return rtrn;
             }
+    };
+
+    template <akml::MatrixConcept MATRIX_TYPE>
+    class FullMatrixSave : public AbstractSave {
+        protected:
+            MATRIX_TYPE parameters;
         
-            inline std::string printTitleAsCSV() {
+        public:
+            inline FullMatrixSave(const MATRIX_TYPE& param) : parameters(param) {
+                parameters_nb = param.getNRows();
+            };
+        
+            template<typename... types>
+            inline FullMatrixSave(const types... params) = delete;
+            inline FullMatrixSave() = delete;
+        
+            template <std::size_t param_id_1, std::size_t param_id_2, typename type>
+            inline void editParameter(type& param_val){
+                if (param_id_1 < parameters_nb)
+                    parameters[{param_id_1, param_id_2}] = param_val;
+                else
+                    throw std::invalid_argument("Dimension error in attempting to edit a save object.");
+            }
+        
+            template<typename... types>
+            inline void editParameters(types... params) = delete;
+        
+            template <std::size_t param_id_1, std::size_t param_id_2, typename type>
+            inline type& getParameter(){
+                if (param_id_1 < parameters_nb)
+                    return parameters[{param_id_1, param_id_2}];
+                else
+                    throw std::invalid_argument("Dimension error in attempting to edit a save object.");
+            }
+            
+            inline std::string printAsCSV() {
                 std::string rtrn ("");
-                for (std::size_t i(0); i < parameters_nb; i++){
-                    rtrn += parameters_name[i];
-                    if (i != parameters_nb-1)
-                        rtrn += ", ";
+                for (std::size_t row(0); row < parameters.getNRows(); row++){
+                    for (std::size_t col(0); col < parameters.getNColumns(); col++){
+                        rtrn += std::to_string(parameters[{row, col}]);
+                        if (col != parameters.getNColumns()-1)
+                            rtrn += ", ";
+                        if (row != parameters.getNRows()-1 && col == parameters.getNColumns()-1)
+                            rtrn += "\n";
+                    }
                 }
                 return rtrn;
             }
-    };
+        };
 
 }
 

@@ -98,7 +98,7 @@ std::string SimulationManager::processSimulation(bool mute) {
                 iterationLogSynthesis[{4+3*agent_i, 0}] = agents[agent_i]->askCritic(buffer.at(inside_iteration).at(agent_i).prevState, buffer.at(inside_iteration).at(agent_i).action);
             }
             prevprice = price;
-            LogManager.addSave(akml::DynamicMatrixSave<float>(2 + agentsNumber * 3, std::move(iterationLogSynthesis)));
+            LogManager.addSave(2 + agentsNumber * 3, std::move(iterationLogSynthesis));
         }
         
         if (iteration%15 == 0)
@@ -149,7 +149,7 @@ void SimulationManager::saveCritics(std::string curt){
         parametersName.push_back("agent" + std::to_string(agent_i+1) + "Actor");
     }
     
-    akml::DynamicMatrixSave<float>::default_parameters_name = parametersName;
+    CriticLogManager.setParameterNames(parametersName);
     CriticLogManager.reserve(101*101);
     
     for (float randomA(0); randomA <= 1; randomA += 0.01){
@@ -166,7 +166,7 @@ void SimulationManager::saveCritics(std::string curt){
                 cursave[{5+agent_i*2, 0}] = (ourA == 0) ? agents.at(agent_i)->askActor(randomA) : -1;
             }
                 
-            CriticLogManager.addSave(akml::DynamicMatrixSave<float>(4+agentsNumber*2, std::move(cursave)));
+            CriticLogManager.addSave(4+agentsNumber*2, std::move(cursave));
         }
     }
     CriticLogManager.saveToCSV("DDPG-Critics-" + curt + ".csv", false);

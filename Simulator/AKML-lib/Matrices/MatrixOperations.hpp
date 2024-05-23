@@ -140,6 +140,22 @@ namespace akml {
     };
 
     template <akml::MatrixConcept MATRIX_TYPE>
+    inline MATRIX_TYPE hadamard_division(MATRIX_TYPE A, MATRIX_TYPE B){
+        if (!A.isInitialized() || !B.isInitialized())
+            throw std::invalid_argument("Matrix provided is not initialized.");
+        if (A.getNColumns() != B.getNColumns() || A.getNRows() != B.getNRows())
+            throw std::invalid_argument("Attempting to perform a product on non-equally sized matrix.");
+        
+        MATRIX_TYPE product(A.getNRows(), A.getNColumns());
+        for (std::size_t i=1; i <= A.getNRows(); i++){
+            for (std::size_t j=1; j <= B.getNColumns(); j++){
+                product(i, j) = A(i, j) * (1/B(i, j));
+            }
+        }
+        return product;
+    };
+
+    template <akml::MatrixConcept MATRIX_TYPE>
     inline MATRIX_TYPE matrix_pow(MATRIX_TYPE A, const unsigned int power){
         if (!A.isInitialized())
             throw std::invalid_argument("Matrix provided is not initialized.");

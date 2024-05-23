@@ -92,8 +92,7 @@ public:
             parametersName.push_back("agent" + std::to_string(agent_i+1) + "EstimatedProfit");
         }
         
-        akml::DynamicMatrixSave<float>::default_parameters_name = parametersName;
-        
+        LogManager.setParameterNames(parametersName);
         LogManager.reserve(std::min((std::size_t)2001, maxIterations));
     };
     

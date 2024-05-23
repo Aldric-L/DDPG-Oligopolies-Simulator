@@ -130,7 +130,20 @@ public:
                                       const std::size_t max_epochs = 1000,
                                       const double tolerance = 1e-6,
                                       const akml::ErrorFunction<float, DynamicMatrix<float>>* errorFunc=&akml::ErrorFunctions::MSE,
-                                      const GRADIENT_METHODS method=GRADIENT_METHODS::GRADIENT_DESCENT);
+                                      const GRADIENT_METHODS method=GRADIENT_METHODS::GRADIENT_DESCENT,
+                                      const double decayFactor=0.9999);
+    
+    void adamGradientTraining(const std::vector<akml::DynamicMatrix<float>> inputs_set,
+                                      const std::vector<akml::DynamicMatrix<float>> outputs_set,
+                                      const std::size_t batch_size,
+                                      const std::size_t max_epochs = 1000,
+                                      double lr_moment1 = 0.9,
+                                      double lr_moment2 = 0.999,
+                                      double step_size = 0.001,
+                                      const double tolerance = 1e-6,
+                                      const akml::ErrorFunction<float, DynamicMatrix<float>>* errorFunc=&akml::ErrorFunctions::MSE,
+                                      const GRADIENT_METHODS method=GRADIENT_METHODS::GRADIENT_DESCENT,
+                                      const double epsilon=1e-8);
     
     akml::DynamicMatrix<float> computeErrorGradient(akml::DynamicMatrix<float> errorGrad);
 

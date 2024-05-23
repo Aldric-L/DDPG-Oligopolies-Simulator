@@ -23,8 +23,26 @@ namespace akml {
     template <SaveClassConcept SaveClass>
     class CSV_Saver {
     protected:
-        std::vector<std::pair<std::size_t, SaveClass*>> memory;
+        std::vector<std::string> parameters_name;
+        std::vector<SaveClass*> memory;
         std::string buffer = "";
+        
+        inline std::string printTitleAsCSV() {
+            std::string rtrn ("");
+            if (parameters_name.size() == 0)
+                return rtrn;
+            
+            if (memory.size() > 0 && parameters_name.size() != memory.front()->getParametersNb())
+                throw std::invalid_argument("Unable to print save file title due to heterogenous dimension error in the parameters name.");
+            
+            for (std::size_t i(0); i < parameters_name.size(); i++){
+                rtrn += parameters_name[i];
+                if (i != parameters_name.size()-1)
+                    rtrn += ", ";
+            }
+            rtrn += "\n";
+            return rtrn;
+        }
         
     public:
         inline CSV_Saver(std::size_t bufferMaxSize=0){
@@ -32,46 +50,55 @@ namespace akml {
                 memory.reserve(bufferMaxSize);
         }
         
+        inline void setParameterNames(std::vector<std::string> pn){ parameters_name = pn; }
+        
         inline void reserve(std::size_t bufferMaxSize){
             memory.reserve(bufferMaxSize);
         }
         
         inline void addSave(SaveClass* iteration) {
-            memory.push_back(std::make_pair((memory.size() == 0) ? 1 : memory.back().first+1, iteration));
+            if (memory.size() > 0 && iteration->getParametersNb() != memory.front()->getParametersNb())
+                throw std::invalid_argument("Heterogenous dimensions accross an unique saves manager.");
+            memory.push_back(iteration);
         }
         
         inline void addSave(const SaveClass iteration) {
+            if (memory.size() > 0 && iteration.getParametersNb() != memory.front()->getParametersNb())
+                throw std::invalid_argument("Heterogenous dimensions accross an unique saves manager.");
             SaveClass* itpoint = new SaveClass();
             *itpoint = std::move(iteration);
-            memory.push_back(std::make_pair((memory.size() == 0) ? 1 : memory.back().first+1, itpoint));
+            memory.push_back(itpoint);
         }
         
         template<typename... types>
         inline void addSave(const types... parameters) {
             SaveClass* itpoint = new SaveClass(parameters...);
-            memory.push_back(std::make_pair((memory.size() == 0) ? 1 : memory.back().first+1, itpoint));
+            if (memory.size() > 0 && itpoint->getParametersNb() != memory.front()->getParametersNb())
+                throw std::invalid_argument("Heterogenous dimensions accross an unique saves manager.");
+            memory.push_back(itpoint);
         }
         
-        inline void bufferize(bool iteration=true){
+        inline void bufferize(bool iteration=true, bool title=true){
             if (memory.size() > 0){
                 if (buffer == ""){
                     if (iteration)
                         buffer += "iteration,";
-                    buffer += memory[0].second->printTitleAsCSV() + "\n";
+                    if (title)
+                        buffer += this->printTitleAsCSV();
                 }
                 
                 for (int it(0); it < memory.size(); it++){
                     if (iteration)
                         buffer += std::to_string(it) + ",";
-                    buffer += memory[it].second->printAsCSV() + "\n";
-                    delete memory[it].second;
+                    buffer += memory[it]->printAsCSV() + "\n";
+                    delete memory[it];
                 }
                 memory.clear();
             }
             
         }
         
-        inline void saveToCSV(const std::string filepathandname="data.csv", bool iteration=true) {
+        inline void saveToCSV(const std::string filepathandname="data.csv", bool iteration=true, bool title=true) {
             if (memory.size() == 0 && buffer == "")
                 throw std::runtime_error("Trying to print log but the memory is empty...");
             std::ofstream file;
@@ -83,12 +110,13 @@ namespace akml {
                 if (buffer == ""){
                     if (iteration)
                         file << "iteration,";
-                    file << memory[0].second->printTitleAsCSV() <<"\n";
+                    if (title)
+                        file << this->printTitleAsCSV();
                 }
                 for (int it(0); it < memory.size(); it++){
                     if (iteration)
                         file << it << ",";
-                    file << memory[it].second->printAsCSV() <<"\n";
+                    file << memory[it]->printAsCSV() <<"\n";
                 }
             }
             file.close();
@@ -96,7 +124,7 @@ namespace akml {
         
         inline ~CSV_Saver() {
             for (int it(0); it < memory.size(); it++){
-                delete memory[it].second;
+                delete memory[it];
             }
         }
         
