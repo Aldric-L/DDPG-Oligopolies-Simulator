@@ -25,7 +25,6 @@
 #define MAX_THREADS_USAGE 0.85
 
 // Some of the options that the user is allowed to edit in CLI
-// DO NOT MODIFY OPTIONS HERE, first, do it in CLI and if you really want to change default, edit the main()
 struct options {
     SimulationManager::OLIGOPOLY_TYPE type = SimulationManager::OLIGOPOLY_TYPE::COURNOT;
     std::size_t agentsNb = 2;
@@ -36,12 +35,14 @@ struct options {
     float learningRateCritic = 0.1;
     SimulationManager::WN_DECAY_METHOD wnDecayMethod = SimulationManager::WN_DECAY_METHOD::EXP;
     bool exportCritics = true;
+    bool inputRenormalization = false;
 };
 
 int main(int argc, const char * argv[]) {
     std::cout << "DDPG-Oligopolies-Simulator v0.1 - Welcome!\n";
     
     options localoptions;
+    //localoptions.simulationsNb = 1;
     
     auto CLOptionsTuple = std::make_tuple
     (akml::CLSelectOption<SimulationManager::OLIGOPOLY_TYPE> (&localoptions.type, "o", "oligopolyModel", "Choose the model (COURNOT|STACKELBERG|TEMPORAL_COURNOT)", {{"COURNOT", SimulationManager::COURNOT}, {"STACKELBERG", SimulationManager::STACKELBERG}, {"TEMPORAL_COURNOT", SimulationManager::TEMPORAL_COURNOT}}),
@@ -51,7 +52,7 @@ int main(int argc, const char * argv[]) {
      akml::CLOption<unsigned int> (&localoptions.maxThreads, "T", "maxThreads", "Set the number of simulations to process in parallel"),
      akml::CLOption<float> (&LearningAgent::gamma, "g", "gamma", "Set the gamma parameter"),
      akml::CLOption<std::size_t> (&LearningAgent::maxBufferSize, "m", "maxBufferSize", "Set the size of the memory buffer"),
-     akml::CLOption<bool> (&LearningAgent::renormReward, "p", "profitNorm", "Enable/Disable profit normalization"),
+     akml::CLOption<bool> (&localoptions.inputRenormalization, "p", "profitNorm", "Enable/Disable profit normalization"),
      akml::CLOption<float> (&SimulationManager::K, "f", "profitFactor", "Reward scaling factor"),
      akml::CLOption<float> (&SimulationManager::B, "F", "profitScale", "Reward scaling constant"),
      akml::CLOption<float> (&LearningAgent::decayRate, "d", "decayRate", "Edit the decayRate parameter"),
@@ -61,7 +62,8 @@ int main(int argc, const char * argv[]) {
      akml::CLOption<float> (&localoptions.learningRateCritic, "c", "criticLR", "Edit the critic learning rate"),
      akml::CLOption<float> (&SimulationManager::C, "C", "modC", "Edit the marginal cost of the model"),
      akml::CLOption<float> (&SimulationManager::D, "D", "modD", "Edit the demand hyperparameter of the model"),
-     akml::CLOption<bool> (&localoptions.exportCritics, "E", "exportCritics", "Should we dump critics of agents at the end of simulation ?"));
+     akml::CLOption<bool> (&localoptions.exportCritics, "E", "exportCritics", "Should we dump critics of agents at the end of simulation ?"),
+     akml::CLOption<bool> (&LearningAgent::adamOptimizer, "a", "adam", "Enable/Disable Adam optimizer"));
         
     try {
         akml::CLManager localCLManager(argc, argv, CLOptionsTuple);
@@ -94,6 +96,10 @@ int main(int argc, const char * argv[]) {
                 case SimulationManager::TRUNC_EXP_RES: managers.back()->setWNMethod(&SimulationManager::TRUNCRESEXPDECAYED_WHITENOISE); break;
             }
             managers.back()->setLearningRates(localoptions.learningRateActor, localoptions.learningRateCritic);
+            if (localoptions.inputRenormalization)
+                managers.back()->enableProfitRenormalization();
+            else
+                managers.back()->disableProfitRenormalization();
         }
         
         for (unsigned int conc_s(0); conc_s < managers.size(); conc_s++){

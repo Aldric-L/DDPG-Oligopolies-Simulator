@@ -10,7 +10,7 @@
 namespace akml {
     namespace ActivationFunctions {
         const struct ActivationFunction<float> SIGMOID = {
-            .function = [](const float x) {return 1/(1+std::exp(-x));},
+            .function = [](const float x) {return 1.f/(1.f+std::exp(-x));},
             .derivative = [](const float x) { return std::exp(-x)/std::pow(1+std::exp(-x),2); }
         };
 

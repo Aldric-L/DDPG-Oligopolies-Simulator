@@ -8,14 +8,6 @@
 #include "LearningAgent.hpp"
 
 void LearningAgent::train(bool mute) {
-    auto renorm = [](float val) {
-        if (!renormReward)
-            return val;
-        float l = 5;
-        float inter = 2.f * l /3.f;
-        return 1.f / (1.f + std::exp(-1.f * l * val + inter));
-    };
-    
     struct innerBatchInputs {
         akml::DynamicMatrix<float>* input;
         akml::DynamicMatrix<float>* input_actor;
@@ -41,6 +33,7 @@ void LearningAgent::train(bool mute) {
     // This vector is about the Actor network optimization phase
     std::vector<akml::DynamicMatrix<float>> batch_actor_grads; batch_actor_grads.reserve(batchSize);
     auto noErrorGradInput = akml::make_dynamic_vector<float>(1.f);
+
     for (std::size_t epoch(0); epoch < maxEpochsAtLearningTime; epoch++){
         // At each epoch, we create a sample of minibatches
         batch_elems.clear(); batch_elems_id.clear();
@@ -48,7 +41,7 @@ void LearningAgent::train(bool mute) {
             std::size_t target(0);
             do {
                 target = distribution(gen);
-            } while (std::find(batch_elems_id.begin(), batch_elems_id.end(), target) != batch_elems_id.end());
+            } while (std::find(batch_elems_id.begin()+batchSize*((unsigned long int)(i/batchSize)), batch_elems_id.end(), target) != batch_elems_id.end());
             batch_elems_id.push_back(target);
             
             batch_elems.push_back({
@@ -56,13 +49,13 @@ void LearningAgent::train(bool mute) {
                 .input_actor = &rBufferInputsStates.at(target),
                 .input_critic = new akml::DynamicMatrix<float> (akml::make_dynamic_vector<float>( replayBuffer.at(target).prevState, policyNet.process(akml::make_dynamic_vector<float>( replayBuffer.at(target).prevState)).read(1,1))),
                 .output_expected = new akml::DynamicMatrix<float> (akml::make_dynamic_vector<float>(
-                            renorm((1.f - gamma) * replayBuffer.at(target).reward +
+                            (1.f - gamma) * replayBuffer.at(target).reward +
                             gamma * (1 - replayBuffer.at(target).isTerminated ) * target_QNet.process(
                                 akml::make_dynamic_vector<float>(replayBuffer.at(target).nextState,
-                                target_policyNet.process(akml::make_dynamic_vector<float>(replayBuffer.at(target).nextState)).read(1,1))).read(1,1))))
+                                target_policyNet.process(akml::make_dynamic_vector<float>(replayBuffer.at(target).nextState)).read(1,1))).read(1,1)))
             });
             
-            if (batch_elems.back().output_expected->read(1,1) > 1.1 || batch_elems.back().output_expected->read(1,1) < 0)
+            if (batch_elems.back().output_expected->read(1,1) > 1 || batch_elems.back().output_expected->read(1,1) < 0)
                 throw std::runtime_error("We are expecting the AI to output " + std::to_string(batch_elems.back().output_expected->read(1,1)));
         }
         
@@ -98,22 +91,66 @@ void LearningAgent::train(bool mute) {
             
             akml::DynamicMatrix<float> final_actor_grad = akml::mean(batch_actor_grads);
             akml::DynamicMatrix<float> final_critic_grad = akml::mean(batch_critic_grads);
-            final_actor_grad = akml::NeuralNetwork::GRADIENT_METHODS::GRADIENT_ASCENT * learningRateActor * final_actor_grad;
-            final_critic_grad = akml::NeuralNetwork::GRADIENT_METHODS::GRADIENT_DESCENT * learningRateCritic * final_critic_grad;
-            if (std::min(learningRateActor, learningRateCritic) < gradientTolerance){
-                std::cout << "\n Insufficient learning rate. End training."; epoch=maxEpochsAtLearningTime-1;
-                goto deleter;
+            
+            if (!LearningAgent::adamOptimizer){
+                final_actor_grad = akml::NeuralNetwork::GRADIENT_METHODS::GRADIENT_ASCENT * learningRateActor * final_actor_grad;
+                final_critic_grad = akml::NeuralNetwork::GRADIENT_METHODS::GRADIENT_DESCENT * learningRateCritic * final_critic_grad;
+                if (std::min(learningRateActor, learningRateCritic) < gradientTolerance){
+                    std::cout << "\n Insufficient learning rate. End training."; epoch=maxEpochsAtLearningTime-1;
+                    goto deleter;
+                }
+                
+            }else {
+                if (criticFirstMoment == nullptr){
+                    criticFirstMoment = new akml::DynamicMatrix<float>(final_critic_grad);
+                    for (std::size_t i(0); i < criticFirstMoment->getNRows(); i++)
+                        criticFirstMoment->operator[]({i, 0}) = 0.f;
+                    criticSecondMoment = new akml::DynamicMatrix<float>(*criticFirstMoment);
+                    criticCorrectedFirstMoment = new akml::DynamicMatrix<float>(*criticFirstMoment);
+                    criticCorrectedSecondMoment = new akml::DynamicMatrix<float>(*criticFirstMoment);
+                    
+                    actorFirstMoment = new akml::DynamicMatrix<float>(final_actor_grad);
+                    for (std::size_t i(0); i < actorFirstMoment->getNRows(); i++)
+                        criticFirstMoment->operator[]({i, 0}) = 0.f;
+                    actorSecondMoment = new akml::DynamicMatrix<float>(*actorFirstMoment);
+                    actorCorrectedFirstMoment = new akml::DynamicMatrix<float>(*actorFirstMoment);
+                    actorCorrectedSecondMoment = new akml::DynamicMatrix<float>(*actorFirstMoment);
+                }
+                
+                *criticFirstMoment = learningRateCritic * (*criticFirstMoment) + (1.f - learningRateCritic)*final_critic_grad;
+                *criticSecondMoment = learningRateCriticS * (*criticSecondMoment) + (1.f - learningRateCriticS)*akml::hadamard_product(final_critic_grad, final_critic_grad);
+                
+                *criticCorrectedFirstMoment = (*criticFirstMoment) * (1/(1-std::pow(learningRateCritic,epoch+learningEpochsCompleted*maxEpochsAtLearningTime)));
+                *criticCorrectedSecondMoment = (*criticSecondMoment) * (1/(1-std::pow(learningRateCriticS,epoch+learningEpochsCompleted*maxEpochsAtLearningTime)));
+                
+                double eps = LearningAgent::epsilon;
+                
+                final_critic_grad = akml::NeuralNetwork::GRADIENT_METHODS::GRADIENT_DESCENT * adamStepSize * akml::hadamard_division(*criticCorrectedFirstMoment,
+                                            akml::transform(*criticCorrectedSecondMoment, (std::function<float(float)>) ([eps](float x) {return std::sqrt(x) + eps; })));
+                
+                *actorFirstMoment = learningRateActor * (*actorFirstMoment) + (1.f - learningRateActor)*final_actor_grad;
+                *actorSecondMoment = learningRateActorS * (*actorSecondMoment) + (1.f - learningRateActorS)*akml::hadamard_product(final_actor_grad, final_actor_grad);
+                
+                *actorCorrectedFirstMoment = (*actorFirstMoment) * (1/(1-std::pow(learningRateActor,epoch+learningEpochsCompleted*maxEpochsAtLearningTime)));
+                *actorCorrectedSecondMoment = (*actorSecondMoment) * (1/(1-std::pow(learningRateActorS,epoch+learningEpochsCompleted*maxEpochsAtLearningTime)));
+                
+                final_actor_grad = akml::NeuralNetwork::GRADIENT_METHODS::GRADIENT_ASCENT * adamStepSize * akml::hadamard_division(*actorCorrectedFirstMoment,
+                                            akml::transform(*actorCorrectedSecondMoment, (std::function<float(float)>) ([eps](float x) {return std::sqrt(x) + eps; })));
             }
             policyNet.mooveCoefficients(std::move(final_actor_grad), gradientTolerance);
             QNet.mooveCoefficients(std::move(final_critic_grad), gradientTolerance);
         }
         learningEpochsCompleted++;
-        learningRateActor = learningRateActor * decayRate;
-        learningRateCritic = learningRateCritic * decayRate;
+        if (!LearningAgent::adamOptimizer){
+            learningRateActor = learningRateActor * decayRate;
+            learningRateCritic = learningRateCritic * decayRate;
+        }
         deleter:
-        for (std::size_t i(0); i < batch_elems.size(); i++){
-            delete batch_elems.at(i).input_critic;
-            delete batch_elems.at(i).output_expected;
+        {
+            for (std::size_t i(0); i < batch_elems.size(); i++){
+                delete batch_elems.at(i).input_critic;
+                delete batch_elems.at(i).output_expected;
+            }
         }
     }
     target_policyNet.polyakMerge(policyNet, polyakCoef);

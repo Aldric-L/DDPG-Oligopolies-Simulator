@@ -44,7 +44,7 @@ std::string SimulationManager::processSimulation(bool mute) {
                         // If agent_i is not leader... we skip
                         if (std::find(leaders.begin(), leaders.end(), agent_i) == leaders.end())
                             continue;
-                        buffer.at(inside_iteration).at(agent_i).action = agents[agent_i]->play(0.f, whitenoise);
+                        buffer.at(inside_iteration).at(agent_i).action = deNormalize(agents[agent_i]->play(normalize(0.f), whitenoise));
                         iterationLogSynthesis[{2+3*agent_i, 0}] = buffer.at(inside_iteration).at(agent_i).action;
                         buffer.at(inside_iteration).at(agent_i).prevState = 0.f;
                         totalQuantity += buffer.at(inside_iteration).at(agent_i).action;
@@ -54,7 +54,7 @@ std::string SimulationManager::processSimulation(bool mute) {
                         // If agent_i is leader... we skip
                         if (std::find(leaders.begin(), leaders.end(), agent_i) != leaders.end())
                             continue;
-                        buffer.at(inside_iteration).at(agent_i).action = agents[agent_i]->play(leadersQuantity, whitenoise);
+                        buffer.at(inside_iteration).at(agent_i).action = deNormalize(agents[agent_i]->play(normalize(leadersQuantity), whitenoise));
                         iterationLogSynthesis[{2+3*agent_i, 0}] = buffer.at(inside_iteration).at(agent_i).action;
                         buffer.at(inside_iteration).at(agent_i).prevState = leadersQuantity;
                         totalQuantity += buffer.at(inside_iteration).at(agent_i).action;
@@ -74,7 +74,7 @@ std::string SimulationManager::processSimulation(bool mute) {
                         if (inside_iteration >0)
                             buffer.at(inside_iteration).at(agent_i).prevState -= buffer.at(inside_iteration-1).at(agent_i).action;
                         buffer.at(inside_iteration).at(agent_i).prevState = buffer.at(inside_iteration).at(agent_i).prevState/(float)(agentsNumber-1);
-                        buffer.at(inside_iteration).at(agent_i).action = agents[agent_i]->play(buffer.at(inside_iteration).at(agent_i).prevState, whitenoise);
+                        buffer.at(inside_iteration).at(agent_i).action = deNormalize(agents[agent_i]->play(normalize(buffer.at(inside_iteration).at(agent_i).prevState), whitenoise));
                         iterationLogSynthesis[{2+3*agent_i, 0}] = buffer.at(inside_iteration).at(agent_i).action;
                         totalQuantity += buffer.at(inside_iteration).at(agent_i).action;
                     }
@@ -83,7 +83,7 @@ std::string SimulationManager::processSimulation(bool mute) {
                     
                 case TEMPORAL_COURNOT:
                     for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
-                        buffer.at(inside_iteration).at(agent_i).action = agents[agent_i]->play(prevprice, whitenoise);
+                        buffer.at(inside_iteration).at(agent_i).action = deNormalize(agents[agent_i]->play(normalize(prevprice), whitenoise));
                         iterationLogSynthesis[{2+3*agent_i, 0}] = buffer.at(inside_iteration).at(agent_i).action;
                         buffer.at(inside_iteration).at(agent_i).action = iterationLogSynthesis[{2+3*agent_i, 0}];
                         buffer.at(inside_iteration).at(agent_i).prevState = prevprice;
@@ -95,7 +95,7 @@ std::string SimulationManager::processSimulation(bool mute) {
             for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
                 buffer.at(inside_iteration).at(agent_i).profit = computeProfit(price, buffer.at(inside_iteration).at(agent_i).action);
                 iterationLogSynthesis[{3+3*agent_i, 0}] = buffer.at(inside_iteration).at(agent_i).profit;
-                iterationLogSynthesis[{4+3*agent_i, 0}] = agents[agent_i]->askCritic(buffer.at(inside_iteration).at(agent_i).prevState, buffer.at(inside_iteration).at(agent_i).action);
+                iterationLogSynthesis[{4+3*agent_i, 0}] = deNormalize(agents[agent_i]->askCritic(normalize(buffer.at(inside_iteration).at(agent_i).prevState), normalize(buffer.at(inside_iteration).at(agent_i).action)));
             }
             prevprice = price;
             LogManager.addSave(2 + agentsNumber * 3, std::move(iterationLogSynthesis));
@@ -106,7 +106,7 @@ std::string SimulationManager::processSimulation(bool mute) {
         
         for (std::size_t inside_iteration(0); inside_iteration < 127; inside_iteration++){
             for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
-                agents[agent_i]->feedBack(buffer.at(inside_iteration).at(agent_i).prevState, buffer.at(inside_iteration).at(agent_i).action, buffer.at(inside_iteration).at(agent_i).profit, buffer.at(inside_iteration+1).at(agent_i).prevState, /*inside_iteration == 126*/false, false );
+                agents[agent_i]->feedBack(normalize(buffer.at(inside_iteration).at(agent_i).prevState), normalize(buffer.at(inside_iteration).at(agent_i).action), normalize(buffer.at(inside_iteration).at(agent_i).profit), normalize(buffer.at(inside_iteration+1).at(agent_i).prevState), /*inside_iteration == 126*/false, false );
             }
         }
         for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
@@ -162,8 +162,8 @@ void SimulationManager::saveCritics(std::string curt){
             cursave[{3,0}] = computeProfit(price, ourA);
                 
             for (std::size_t agent_i(0); agent_i < agentsNumber; agent_i++){
-                cursave[{4+agent_i*2, 0}] = agents.at(agent_i)->askCritic(randomA, ourA);
-                cursave[{5+agent_i*2, 0}] = (ourA == 0) ? agents.at(agent_i)->askActor(randomA) : -1;
+                cursave[{4+agent_i*2, 0}] = deNormalize(agents.at(agent_i)->askCritic(normalize(randomA), normalize(ourA)));
+                cursave[{5+agent_i*2, 0}] = (ourA == 0) ? deNormalize(agents.at(agent_i)->askActor(normalize(randomA))) : -1;
             }
                 
             CriticLogManager.addSave(4+agentsNumber*2, std::move(cursave));

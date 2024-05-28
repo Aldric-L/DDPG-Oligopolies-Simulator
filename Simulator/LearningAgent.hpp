@@ -20,6 +20,7 @@ public:
     struct replay {float prevState; float agentAction; float reward; float nextState; bool isTerminated;
         replay(float prevState, float agentAction, float reward, float nextState, bool isTerminated) : prevState(prevState), agentAction(agentAction), reward(reward), nextState(nextState), isTerminated(isTerminated) {}; };
     static inline bool renormReward = true;
+    static inline bool adamOptimizer = true;
     static inline unsigned short int preLearningExpriences = 126;
     //static inline std::size_t maxBufferSize = 2000;
     static inline std::size_t maxBufferSize = 500;
@@ -32,11 +33,18 @@ public:
     static inline float gamma = 0.1;
     static inline float polyakCoef = 0.95;
     static inline float decayRate = 0.9998;
+    
     float learningRateActor = 0.01;
     float learningRateCritic = 0.1;
+    float learningRateActorS = 0.01;
+    float learningRateCriticS = 0.1;
+    double adamStepSize = 0.001;
+    double epsilon=1e-8;
     
     
 protected:
+    akml::DynamicMatrix<float> *criticFirstMoment, *criticSecondMoment, *criticCorrectedFirstMoment, *criticCorrectedSecondMoment, *actorFirstMoment, *actorSecondMoment, *actorCorrectedFirstMoment, *actorCorrectedSecondMoment;
+    
     std::mt19937 gen;
     std::string name;
     unsigned short int accumulatedExperiences;
@@ -53,9 +61,17 @@ protected:
     void train(bool mute=false);
     
 public:
-    LearningAgent(std::string name="") : QNet(4), policyNet(4), accumulatedExperiences(0), target_QNet(4), target_policyNet(4), name(std::move(name)), gen(std::random_device{}()) {
+    LearningAgent(std::string name="") : QNet(4), policyNet(4), accumulatedExperiences(0), target_QNet(4), target_policyNet(4), name(std::move(name)), gen(std::random_device{}()), criticFirstMoment(nullptr), criticSecondMoment(nullptr), criticCorrectedFirstMoment(nullptr), criticCorrectedSecondMoment(nullptr), actorFirstMoment(nullptr), actorSecondMoment(nullptr), actorCorrectedFirstMoment(nullptr), actorCorrectedSecondMoment(nullptr) {
         QNet.construct(QNetInitList); policyNet.construct(PolicyNetInitList);
         target_QNet = QNet; target_policyNet = policyNet;
+    }
+    
+    ~LearningAgent() {
+        if (LearningAgent::adamOptimizer && criticFirstMoment != nullptr){
+            delete criticFirstMoment; delete criticSecondMoment; delete criticCorrectedFirstMoment;
+            delete criticCorrectedSecondMoment; delete actorFirstMoment; delete actorSecondMoment;
+            delete actorCorrectedFirstMoment; delete actorCorrectedSecondMoment;
+        }
     }
     
     inline float play(float state, float white_noise=0.f) {

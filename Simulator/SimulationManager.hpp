@@ -8,12 +8,14 @@
 #ifndef SimulationManager_hpp
 #define SimulationManager_hpp
 
+#include "AKML-lib/AgentBasedUtilities/CSV_Saver.hpp"
+
 #include <stdio.h>
 #include <string>
 #include <functional>
 #include <vector>
 #include <thread>
-#include "AKML-lib/AgentBasedUtilities/CSV_Saver.hpp"
+
 #include "LearningAgent.hpp"
 
 
@@ -48,6 +50,12 @@ public:
     inline static const float SIGDECAYED_WHITENOISE (std::size_t it, std::size_t maxiterations) {
         return 1.f-(1 / (1 + (float)std::exp(0.65 * (float)maxiterations - (float)it))); }
     
+    static inline const float LOGIT_RENORM(const float val) { return std::log(val/(1-val)); };
+    static inline const float SIGMOID_RENORM(const float val) { return 1.f/(1.f+std::exp(-val)); };
+    //static inline const float DTEST1_RENORM(const float val) { return 8.f * val - 4; };
+    //static inline const float NTEST1_RENORM(const float val) { return val/8.f + 0.5; };
+    static inline const float NO_RENORM(const float val) { return val; };
+    
     
 protected:
     // Local parameters
@@ -55,6 +63,8 @@ protected:
     std::function<float(float)> inverseDemand;
     std::function<float(float)> cost;
     std::function<float(std::size_t, std::size_t)> whitenoiseMethod;
+    std::function<float(float)> normalize;
+    std::function<float(float)> deNormalize;
     
     std::size_t agentsNumber;
     std::size_t maxIterations;
@@ -94,6 +104,9 @@ public:
         
         LogManager.setParameterNames(parametersName);
         LogManager.reserve(std::min((std::size_t)2001, maxIterations));
+        
+        normalize = &NO_RENORM;
+        deNormalize = &NO_RENORM;
     };
     
     inline ~SimulationManager() {
@@ -105,7 +118,19 @@ public:
     
     inline void setGamma(const float gamma){ LearningAgent::gamma = gamma; }
     inline void setDecayrate(const float dr){ LearningAgent::decayRate = dr; }
-    inline void disableProfitRenormalization(){ LearningAgent::renormReward = !LearningAgent::renormReward; }
+    
+    inline void disableProfitRenormalization(){
+        LearningAgent::renormReward = false;
+        normalize = &NO_RENORM;
+        deNormalize = &NO_RENORM;
+    }
+    
+    inline void enableProfitRenormalization(){
+        LearningAgent::renormReward = true;
+        normalize = &SIGMOID_RENORM;
+        deNormalize = &LOGIT_RENORM;
+    }
+    
     inline void setWNMethod(const std::function<float(std::size_t, std::size_t)> method){ whitenoiseMethod = method; }
     inline void setLearningRates(const float actorLR, const float criticLR) {
         for (std::size_t agent_i(0); agent_i < agents.size(); agent_i++){
